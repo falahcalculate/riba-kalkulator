@@ -1,0 +1,2071 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulator Beban Riba — Terlanjur Riba by Achmad Alief</title>
+<meta name="description" content="Kalkulator analisis beban riba personal. Data tidak disimpan di server.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+/* ══════════════════════════════════════════════════
+   ROOT & RESET
+══════════════════════════════════════════════════ */
+:root {
+  --cream: #F5F0E8;
+  --warm:  #FDFAF4;
+  --ink:   #1A1610;
+  --ink70: rgba(26,22,16,.70);
+  --ink45: rgba(26,22,16,.45);
+  --ink20: rgba(26,22,16,.20);
+  --ink10: rgba(26,22,16,.10);
+  --ink05: rgba(26,22,16,.05);
+  --gold:       #A8742A;
+  --gold-light: #EDE0C4;
+  --gold-mid:   #C49A45;
+  --teal:       #1A6B52;
+  --teal-light: #CEEADE;
+  --amber:      #7A5010;
+  --amber-light:#F2E4C0;
+  --red:        #802820;
+  --red-light:  #F2D4D0;
+  --blue:       #1A4A80;
+  --blue-light: #D0E2F5;
+  --r:  14px;
+  --rs:  8px;
+  --b: 1px solid var(--ink10);
+  --shadow: 0 2px 16px rgba(26,22,16,.06);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--cream);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--ink);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+  position: relative;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Ccircle cx='1' cy='1' r='.5' fill='rgba(26,22,16,.035)'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0;
+}
+
+/* ══════════════════════════════════════════════════
+   LAYOUT
+══════════════════════════════════════════════════ */
+.page { max-width: 720px; margin: 0 auto; padding: 0 20px 100px; position: relative; z-index: 1; }
+
+/* ══════════════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════════════ */
+.hdr { padding: 56px 0 48px; text-align: center; }
+.brand-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 22px; }
+.brand-line { width: 36px; height: 1px; background: var(--gold); opacity: .5; }
+.brand-text { font-size: 10.5px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
+.hdr h1 { font-family: 'Lora', serif; font-size: clamp(26px, 5.5vw, 40px); font-weight: 600; line-height: 1.18; margin-bottom: 14px; }
+.hdr h1 em { font-style: italic; color: var(--gold); }
+.hdr-sub { font-size: 14.5px; color: var(--ink70); line-height: 1.7; max-width: 480px; margin: 0 auto 20px; }
+.privacy-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--teal-light); color: var(--teal);
+  font-size: 11.5px; font-weight: 600; padding: 6px 14px;
+  border-radius: 20px; border: 1px solid rgba(26,107,82,.2);
+}
+.privacy-badge::before { content: '🔒'; font-size: 11px; }
+
+/* ══════════════════════════════════════════════════
+   STEP INDICATOR
+══════════════════════════════════════════════════ */
+.step-ind {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; margin-bottom: 40px; padding: 0 10px;
+}
+.si-item { display: flex; flex-direction: column; align-items: center; }
+.si-dot {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: var(--b); background: var(--warm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: var(--ink45);
+  transition: all .3s ease;
+}
+.si-dot.active { background: var(--ink); color: var(--warm); border-color: var(--ink); box-shadow: 0 0 0 4px rgba(26,22,16,.08); }
+.si-dot.done { background: var(--teal-light); color: var(--teal); border-color: rgba(26,107,82,.3); }
+.si-line { width: 40px; height: 1px; background: var(--ink10); margin-bottom: 16px; }
+.si-lbl { font-size: 10.5px; color: var(--ink45); margin-top: 5px; font-weight: 500; }
+.si-dot.active + .si-lbl { color: var(--ink); }
+
+/* ══════════════════════════════════════════════════
+   CARDS
+══════════════════════════════════════════════════ */
+.card {
+  background: var(--warm); border: var(--b);
+  border-radius: var(--r); margin-bottom: 14px;
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.card-hd {
+  padding: 18px 24px 15px; border-bottom: var(--b);
+  display: flex; align-items: center; gap: 10px;
+}
+.card-icon {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--gold-light); color: var(--gold);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.card-ttl { font-family: 'Lora', serif; font-size: 16px; font-weight: 500; }
+.card-body { padding: 22px 24px; }
+
+/* ══════════════════════════════════════════════════
+   STEP PAGES
+══════════════════════════════════════════════════ */
+.step-pg { display: none; }
+.step-pg.active { display: block; animation: fadeUp .38s ease; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ══════════════════════════════════════════════════
+   FORM ELEMENTS
+══════════════════════════════════════════════════ */
+.field { margin-bottom: 18px; }
+.field:last-child { margin-bottom: 0; }
+.lbl { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink70); margin-bottom: 7px; letter-spacing: .01em; }
+.lbl-opt { font-weight: 400; color: var(--ink45); }
+.hint { font-size: 11.5px; color: var(--ink45); margin-top: 5px; line-height: 1.55; }
+
+.iw { position: relative; }
+.pfx, .sfx { position: absolute; top: 50%; transform: translateY(-50%); font-size: 13.5px; color: var(--ink45); pointer-events: none; font-weight: 400; }
+.pfx { left: 13px; }
+.sfx { right: 13px; font-size: 12px; }
+
+input[type=text], input[type=number], select, textarea {
+  width: 100%; padding: 11px 13px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14.5px; color: var(--ink);
+  background: var(--cream); border: 1px solid var(--ink20);
+  border-radius: var(--rs); outline: none;
+  transition: border-color .18s, background .18s;
+  -moz-appearance: textfield;
+}
+input[type=number]::-webkit-inner-spin-button { display: none; }
+.has-pfx input, .has-pfx select { padding-left: 38px; }
+.has-sfx input { padding-right: 48px; }
+input:focus, select:focus, textarea:focus { border-color: var(--gold); background: var(--warm); }
+select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='rgba(26,22,16,.4)' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 38px; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.full { grid-column: 1 / -1; }
+
+/* ══════════════════════════════════════════════════
+   UTANG ITEMS
+══════════════════════════════════════════════════ */
+.utang-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.utang-item {
+  background: var(--cream); border: var(--b);
+  border-radius: var(--rs); padding: 16px 18px;
+  position: relative; animation: fadeUp .3s ease;
+}
+.utang-item-hd { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.type-badge {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; padding: 4px 11px; border-radius: 10px;
+}
+.tb-kpr       { background: var(--blue-light); color: var(--blue); }
+.tb-kendaraan { background: var(--teal-light);  color: var(--teal); }
+.tb-kk        { background: var(--amber-light); color: var(--amber); }
+.tb-pinjol    { background: var(--red-light);   color: var(--red); }
+.tb-kta       { background: var(--gold-light);  color: var(--gold); }
+.utang-sub { font-size: 11.5px; color: var(--ink45); }
+.del-btn {
+  position: absolute; top: 12px; right: 14px;
+  width: 24px; height: 24px; border-radius: 50%;
+  border: none; background: var(--ink05); color: var(--ink45);
+  font-size: 15px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.del-btn:hover { background: var(--red-light); color: var(--red); }
+.utang-calc {
+  display: none; margin-top: 10px;
+  background: rgba(26,22,16,.04); border-radius: 6px;
+  padding: 9px 13px; font-size: 12px; color: var(--ink70); line-height: 1.6;
+}
+.utang-calc.show { display: block; }
+
+.add-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.add-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 15px; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12.5px; font-weight: 600;
+  border: 1.5px dashed var(--ink20); border-radius: 20px;
+  background: transparent; cursor: pointer; color: var(--ink70);
+  transition: all .18s;
+}
+.add-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-light); }
+
+/* ══════════════════════════════════════════════════
+   RADIO / CHECK
+══════════════════════════════════════════════════ */
+.radio-grp { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.radio-grp.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+.radio-item {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 11px 13px; border: var(--b);
+  border-radius: var(--rs); cursor: pointer;
+  background: var(--cream); transition: all .15s;
+}
+.radio-item:hover { border-color: rgba(168,116,42,.4); }
+.radio-item.sel { border-color: var(--gold); background: var(--gold-light); }
+.radio-item input { display: none; }
+.rb {
+  width: 17px; height: 17px; border-radius: 50%;
+  border: 1.5px solid var(--ink20); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s; margin-top: 2px;
+}
+.radio-item.sel .rb { border-color: var(--gold); }
+.rb::after { content: ''; display: none; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
+.radio-item.sel .rb::after { display: block; }
+.rl { font-size: 13px; color: var(--ink); font-weight: 500; line-height: 1.35; }
+.rl-sub { font-size: 11px; color: var(--ink45); margin-top: 2px; line-height: 1.4; }
+
+/* ══════════════════════════════════════════════════
+   SLIDER
+══════════════════════════════════════════════════ */
+.slider-row { display: flex; align-items: center; gap: 14px; margin: 8px 0 4px; }
+.slider-end { font-size: 12px; color: var(--ink45); white-space: nowrap; }
+input[type=range] {
+  flex: 1; -webkit-appearance: none; height: 4px; border-radius: 2px;
+  background: linear-gradient(to right, var(--gold) var(--pct, 67%), var(--ink10) var(--pct, 67%));
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 20px; height: 20px;
+  border-radius: 50%; background: white;
+  border: 2.5px solid var(--gold); cursor: pointer;
+  box-shadow: 0 1px 5px rgba(26,22,16,.15);
+}
+.slider-val { font-size: 14px; font-weight: 600; color: var(--gold); min-width: 34px; text-align: right; }
+
+/* ══════════════════════════════════════════════════
+   LIVE PREVIEW
+══════════════════════════════════════════════════ */
+.live-prev {
+  background: var(--warm); border: var(--b);
+  border-radius: var(--r); padding: 18px 22px;
+  margin-top: 14px; margin-bottom: 14px;
+  display: none;
+}
+.live-prev.show { display: block; }
+.live-title { font-size: 11.5px; font-weight: 700; color: var(--ink45); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 14px; }
+.live-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.live-card { background: var(--cream); border-radius: var(--rs); padding: 12px 14px; }
+.live-lbl { font-size: 10.5px; font-weight: 600; color: var(--ink45); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 4px; }
+.live-val { font-family: 'Lora', serif; font-size: 20px; font-weight: 600; line-height: 1; margin-bottom: 2px; }
+.live-sub { font-size: 11px; color: var(--ink45); }
+.c-green { color: var(--teal); }
+.c-amber { color: var(--amber); }
+.c-red   { color: var(--red); }
+
+/* ══════════════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════════════ */
+.nav-row { display: flex; gap: 10px; margin-top: 8px; }
+.btn-primary {
+  flex: 1; padding: 15px 20px;
+  background: var(--ink); color: var(--warm);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px; font-weight: 600;
+  border: none; border-radius: var(--r); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all .2s;
+}
+.btn-primary:hover { background: #2a2418; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(26,22,16,.2); }
+.btn-primary:active { transform: none; box-shadow: none; }
+.btn-primary:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-secondary {
+  padding: 15px 20px; background: transparent; color: var(--ink70);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 500;
+  border: var(--b); border-radius: var(--r); cursor: pointer; transition: all .18s;
+}
+.btn-secondary:hover { background: var(--warm); color: var(--ink); }
+.btn-gold {
+  flex: 1; padding: 15px 20px;
+  background: var(--gold); color: white;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px; font-weight: 600;
+  border: none; border-radius: var(--r); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all .2s;
+}
+.btn-gold:hover { background: var(--gold-mid); transform: translateY(-1px); }
+.btn-gold:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.btn-outline {
+  flex: 1; padding: 14px 20px;
+  background: transparent; color: var(--ink70);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 500;
+  border: var(--b); border-radius: var(--r); cursor: pointer; transition: all .18s;
+}
+.btn-outline:hover { background: var(--warm); color: var(--ink); }
+
+/* ══════════════════════════════════════════════════
+   LOADING
+══════════════════════════════════════════════════ */
+.loading-wrap { display: none; text-align: center; padding: 70px 24px; }
+.loading-wrap.show { display: block; }
+.spinner {
+  width: 42px; height: 42px;
+  border: 2.5px solid var(--ink10);
+  border-top-color: var(--gold);
+  border-radius: 50%; animation: spin .75s linear infinite;
+  margin: 0 auto 24px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.load-msg { font-family: 'Lora', serif; font-style: italic; font-size: 16px; color: var(--ink70); margin-bottom: 6px; }
+.load-sub { font-size: 12.5px; color: var(--ink45); }
+.load-progress { width: 180px; height: 2px; background: var(--ink10); border-radius: 1px; margin: 20px auto 0; overflow: hidden; }
+.load-bar { height: 100%; background: var(--gold); border-radius: 1px; animation: progress 6s ease-out forwards; }
+@keyframes progress { from { width: 0; } to { width: 95%; } }
+
+/* ══════════════════════════════════════════════════
+   RESULT SECTION
+══════════════════════════════════════════════════ */
+.result-wrap { display: none; }
+.result-wrap.show { display: block; animation: fadeUp .5s ease; }
+
+/* Level card */
+.lv-card { border-radius: var(--r); padding: 30px 28px 26px; margin-bottom: 14px; }
+.lv-card.ringan { background: var(--teal-light); border: 1px solid rgba(26,107,82,.2); }
+.lv-card.sedang { background: var(--amber-light); border: 1px solid rgba(122,80,16,.2); }
+.lv-card.berat  { background: var(--red-light);   border: 1px solid rgba(128,40,32,.2); }
+.lv-eye { font-size: 10.5px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 8px; }
+.ringan .lv-eye { color: var(--teal); }
+.sedang .lv-eye { color: var(--amber); }
+.berat  .lv-eye { color: var(--red); }
+.lv-title { font-family: 'Lora', serif; font-size: 24px; font-weight: 600; line-height: 1.2; margin-bottom: 10px; }
+.ringan .lv-title { color: var(--teal); }
+.sedang .lv-title { color: var(--amber); }
+.berat  .lv-title { color: var(--red); }
+.lv-desc { font-size: 13.5px; line-height: 1.7; opacity: .85; }
+.lv-score {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 14px; padding: 6px 14px;
+  background: rgba(255,255,255,.5); border-radius: 20px;
+  font-size: 12px; font-weight: 600; color: var(--ink70);
+}
+
+/* Red flags */
+.redflag-card {
+  display: none; background: var(--red-light);
+  border: 1px solid rgba(128,40,32,.2); border-radius: var(--r);
+  padding: 20px 24px; margin-bottom: 14px;
+}
+.redflag-card.show { display: block; animation: fadeUp .4s ease; }
+.rf-title {
+  font-family: 'Lora', serif; font-size: 15px; font-weight: 500;
+  color: var(--red); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.rf-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.rf-item {
+  display: flex; align-items: flex-start; gap: 9px;
+  font-size: 13px; color: var(--red); line-height: 1.55; opacity: .9;
+}
+.rf-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); margin-top: 5px; flex-shrink: 0; }
+
+/* Score bars */
+.score-section {
+  background: var(--warm); border: var(--b);
+  border-radius: var(--r); padding: 22px 24px; margin-bottom: 14px;
+}
+.sec-label {
+  font-size: 11px; font-weight: 700; color: var(--ink45);
+  text-transform: uppercase; letter-spacing: .1em; margin-bottom: 18px;
+}
+.score-row { margin-bottom: 16px; }
+.score-row:last-child { margin-bottom: 0; }
+.score-row-hd { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
+.score-lbl { font-size: 13px; font-weight: 500; color: var(--ink70); }
+.score-v { font-size: 13px; font-weight: 600; }
+.bar-track { height: 7px; background: var(--ink05); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width 1.4s cubic-bezier(.22,1,.36,1); }
+.bar-teal  { background: var(--teal); }
+.bar-amber { background: var(--amber); }
+.bar-red   { background: var(--red); }
+.score-note { font-size: 11px; color: var(--ink45); margin-top: 4px; }
+
+/* Breakdown table */
+.breakdown-card { background: var(--warm); border: var(--b); border-radius: var(--r); overflow: hidden; margin-bottom: 14px; }
+.bk-hd { padding: 16px 24px; border-bottom: var(--b); display: flex; align-items: center; gap: 10px; }
+.bk-ttl { font-family: 'Lora', serif; font-size: 15px; font-weight: 500; }
+.bk-row { display: flex; align-items: center; justify-content: space-between; padding: 15px 24px; border-bottom: var(--b); gap: 12px; }
+.bk-row:last-child { border-bottom: none; }
+.bk-left { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.bk-info { min-width: 0; }
+.bk-name { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.bk-detail { font-size: 11.5px; color: var(--ink45); margin-top: 1px; }
+.bk-right { text-align: right; flex-shrink: 0; }
+.bk-cicilan { font-size: 15px; font-weight: 600; color: var(--ink); font-family: 'Lora', serif; }
+.bk-bunga { font-size: 11.5px; color: var(--red); margin-top: 1px; font-weight: 600; }
+.bk-total { padding: 14px 24px; background: var(--cream); display: flex; justify-content: space-between; align-items: center; }
+.bk-total-lbl { font-size: 12px; font-weight: 700; color: var(--ink70); text-transform: uppercase; letter-spacing: .06em; }
+.bk-total-val { font-family: 'Lora', serif; font-size: 18px; font-weight: 600; color: var(--ink); }
+
+/* Summary grid */
+.sum-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.sum-card { background: var(--warm); border: var(--b); border-radius: var(--rs); padding: 16px 18px; }
+.sum-lbl { font-size: 10.5px; font-weight: 700; color: var(--ink45); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.sum-val { font-family: 'Lora', serif; font-size: 22px; font-weight: 600; line-height: 1; margin-bottom: 3px; }
+.sum-sub { font-size: 11px; }
+
+/* Scenario */
+.scenario-card { background: var(--warm); border: var(--b); border-radius: var(--r); overflow: hidden; margin-bottom: 14px; }
+.sc-hd { padding: 16px 24px; border-bottom: var(--b); }
+.sc-ttl { font-family: 'Lora', serif; font-size: 15px; font-weight: 500; }
+.sc-sub { font-size: 12px; color: var(--ink45); margin-top: 2px; }
+.sc-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+.sc-item { padding: 20px 18px; border-right: var(--b); border-bottom: var(--b); }
+.sc-item:last-child { border-right: none; }
+.sc-item.rec { background: var(--gold-light); }
+.sc-ilbl { font-size: 10.5px; font-weight: 700; color: var(--ink45); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+.sc-item.rec .sc-ilbl { color: var(--gold); }
+.sc-year { font-family: 'Lora', serif; font-size: 24px; font-weight: 600; color: var(--ink); line-height: 1; margin-bottom: 4px; }
+.sc-item.rec .sc-year { color: var(--amber); }
+.sc-ydesc { font-size: 11.5px; color: var(--ink45); margin-bottom: 8px; }
+.sc-bunga { font-size: 12px; color: var(--red); font-weight: 600; }
+.sc-extra { font-size: 11px; color: var(--ink45); margin-top: 4px; }
+.sc-rec-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--gold); color: white;
+  font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px;
+  margin-top: 6px; letter-spacing: .04em;
+}
+
+/* Divider */
+.divider { display: flex; align-items: center; gap: 14px; margin: 28px 0 18px; }
+.divider span { font-family: 'Lora', serif; font-style: italic; font-size: 13.5px; color: var(--ink45); white-space: nowrap; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--ink10); }
+
+/* AI Analysis */
+.ai-card { background: var(--warm); border: var(--b); border-radius: var(--r); overflow: hidden; margin-bottom: 14px; }
+.ai-hd { padding: 16px 24px; border-bottom: var(--b); display: flex; align-items: center; gap: 12px; }
+.ai-icon {
+  width: 30px; height: 30px; background: var(--ink);
+  border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; color: var(--warm); font-size: 13px; flex-shrink: 0;
+}
+.ai-hd-ttl { font-family: 'Lora', serif; font-size: 15px; font-weight: 500; }
+.ai-hd-sub { font-size: 11.5px; color: var(--ink45); margin-top: 1px; }
+.ai-body { padding: 24px; font-size: 14px; line-height: 1.82; color: var(--ink); }
+.ai-body h3 { font-family: 'Lora', serif; font-size: 15.5px; font-weight: 500; color: var(--ink); margin: 22px 0 9px; padding-bottom: 8px; border-bottom: var(--b); }
+.ai-body h3:first-child { margin-top: 0; }
+.ai-body p { margin-bottom: 11px; color: var(--ink70); }
+.ai-body p:last-child { margin-bottom: 0; }
+.ai-body ul { padding-left: 20px; margin-bottom: 11px; }
+.ai-body li { margin-bottom: 6px; color: var(--ink70); }
+.ai-body strong { color: var(--ink); font-weight: 600; }
+.cursor { display: inline-block; width: 2px; height: 15px; background: var(--gold); margin-left: 2px; animation: blink .9s ease infinite; vertical-align: middle; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* Opsi keluar */
+.opsi-card { background: var(--warm); border: var(--b); border-radius: var(--r); overflow: hidden; margin-bottom: 14px; }
+.opsi-hd { padding: 16px 24px; border-bottom: var(--b); }
+.opsi-hd-ttl { font-family: 'Lora', serif; font-size: 15px; font-weight: 500; }
+.opsi-hd-sub { font-size: 12px; color: var(--ink45); margin-top: 2px; }
+.opsi-row { display: flex; gap: 14px; padding: 15px 24px; border-bottom: var(--b); align-items: flex-start; transition: background .15s; }
+.opsi-row:last-child { border-bottom: none; }
+.opsi-row.rec { background: var(--gold-light); border-left: 3px solid var(--gold); }
+.opsi-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}
+.opsi-num.def { background: var(--ink05); color: var(--ink45); }
+.opsi-num.recn { background: var(--gold); color: white; }
+.opsi-ttl { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.opsi-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; background: var(--gold); color: white; letter-spacing: .03em; }
+.opsi-desc { font-size: 12.5px; color: var(--ink45); line-height: 1.6; }
+
+/* Steps */
+.steps-card { background: var(--warm); border: var(--b); border-radius: var(--r); overflow: hidden; margin-bottom: 14px; }
+.steps-hd { padding: 16px 24px; border-bottom: var(--b); }
+.steps-hd-ttl { font-family: 'Lora', serif; font-size: 15px; font-weight: 500; }
+.steps-hd-sub { font-size: 12px; color: var(--ink45); margin-top: 2px; }
+.step-row { display: flex; gap: 14px; padding: 16px 24px; border-bottom: var(--b); }
+.step-row:last-child { border-bottom: none; }
+.st-num {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--gold-light); color: var(--gold);
+  font-size: 12.5px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+}
+.st-body { flex: 1; }
+.st-title { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.st-desc { font-size: 13px; color: var(--ink70); line-height: 1.65; }
+.st-time { font-size: 11px; color: var(--teal); margin-top: 5px; font-weight: 600; }
+
+/* Disclaimer */
+.disc { background: var(--ink); border-radius: var(--r); padding: 24px 28px; margin-top: 12px; }
+.disc-text { font-size: 12.5px; color: rgba(253,250,244,.52); line-height: 1.75; text-align: center; }
+.disc-text strong { color: rgba(253,250,244,.85); font-weight: 600; }
+.disc-author { font-size: 11.5px; color: rgba(253,250,244,.35); text-align: center; margin-top: 10px; letter-spacing: .02em; }
+
+/* Export row */
+.export-row { display: flex; gap: 10px; margin-top: 14px; }
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════ */
+@media (max-width: 540px) {
+  .grid2, .radio-grp, .sc-grid { grid-template-columns: 1fr; }
+  .radio-grp.cols3 { grid-template-columns: 1fr 1fr; }
+  .sc-item { border-right: none; }
+  .hdr { padding: 36px 0 30px; }
+  .card-body { padding: 18px; }
+  .ai-body { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ══ HEADER ══ -->
+<div class="hdr">
+  <div class="brand-row">
+    <div class="brand-line"></div>
+    <span class="brand-text">jalanpulang.id</span>
+    <div class="brand-line"></div>
+  </div>
+  <h1>Kalkulator Beban Riba<br><em>Personal & Terukur</em></h1>
+  <p class="hdr-sub">Isi data keuanganmu dengan jujur. Hasilnya bukan vonis — tapi peta nyata dengan solusi yang bisa langsung dijalankan.</p>
+  <div class="privacy-badge">Data tidak disimpan di server — hanya diproses di perangkat Anda</div>
+</div>
+
+<!-- ══ STEP INDICATOR ══ -->
+<div class="step-ind">
+  <div class="si-item"><div class="si-dot active" id="si1">1</div><div class="si-lbl">Data Utang</div></div>
+  <div class="si-line"></div>
+  <div class="si-item"><div class="si-dot" id="si2">2</div><div class="si-lbl">Keuangan</div></div>
+  <div class="si-line"></div>
+  <div class="si-item"><div class="si-dot" id="si3">3</div><div class="si-lbl">Kondisi</div></div>
+  <div class="si-line"></div>
+  <div class="si-item"><div class="si-dot" id="si4">✓</div><div class="si-lbl">Hasil</div></div>
+</div>
+
+<!-- ════════════════════════════════════════
+     STEP 1 — DATA UTANG
+════════════════════════════════════════ -->
+<div class="step-pg active" id="sp1">
+
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-icon">1</div>
+      <div class="card-ttl">Identitas pemilik laporan</div>
+    </div>
+    <div class="card-body">
+      <div class="grid2">
+        <div class="field">
+          <label class="lbl">Nama lengkap</label>
+          <input type="text" id="nama" placeholder="Nama kamu...">
+          <div class="hint">Akan muncul di laporan PDF yang dihasilkan</div>
+        </div>
+        <div class="field">
+          <label class="lbl">Kota domisili <span class="lbl-opt">(opsional)</span></label>
+          <input type="text" id="kota" placeholder="Jakarta, Surabaya, dll">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-icon">2</div>
+      <div class="card-ttl">Daftar utang yang sedang berjalan</div>
+    </div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--ink70);margin-bottom:16px;line-height:1.65">Tambahkan setiap utang secara terpisah. Semakin lengkap dan jujur datanya, semakin akurat analisis dan solusinya.</p>
+      <div class="utang-list" id="utang-list"></div>
+      <div class="add-btns">
+        <button class="add-btn" onclick="addUtang('kpr')">+ KPR</button>
+        <button class="add-btn" onclick="addUtang('kendaraan')">+ Kendaraan</button>
+        <button class="add-btn" onclick="addUtang('kk')">+ Kartu Kredit</button>
+        <button class="add-btn" onclick="addUtang('pinjol')">+ Pinjol / Paylater</button>
+        <button class="add-btn" onclick="addUtang('kta')">+ KTA / Pinjaman Lain</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-icon">3</div>
+      <div class="card-ttl">Pekerjaan & industri</div>
+    </div>
+    <div class="card-body">
+      <div class="field">
+        <label class="lbl">Apakah pekerjaanmu saat ini terkait langsung industri riba?</label>
+        <div class="radio-grp" style="grid-template-columns:1fr 1fr">
+          <label class="radio-item" onclick="selRadio(this,'pekerjaan')">
+            <input type="radio" name="pekerjaan" value="tidak">
+            <div class="rb"></div>
+            <div><div class="rl">Tidak terkait</div><div class="rl-sub">Di luar industri keuangan konvensional</div></div>
+          </label>
+          <label class="radio-item" onclick="selRadio(this,'pekerjaan')">
+            <input type="radio" name="pekerjaan" value="abu">
+            <div class="rb"></div>
+            <div><div class="rl">Zona abu-abu</div><div class="rl-sub">Perusahaan umum, divisi non-keuangan</div></div>
+          </label>
+          <label class="radio-item" onclick="selRadio(this,'pekerjaan')">
+            <input type="radio" name="pekerjaan" value="langsung">
+            <div class="rb"></div>
+            <div><div class="rl">Ya, langsung</div><div class="rl-sub">Bank konvensional, leasing, dll</div></div>
+          </label>
+          <label class="radio-item" onclick="selRadio(this,'pekerjaan')">
+            <input type="radio" name="pekerjaan" value="bisnis">
+            <div class="rb"></div>
+            <div><div class="rl">Usaha sendiri</div><div class="rl-sub">Bisnis yang melibatkan akad riba</div></div>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-primary" onclick="goStep(2)">Lanjut ke kondisi keuangan →</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     STEP 2 — KONDISI KEUANGAN
+════════════════════════════════════════ -->
+<div class="step-pg" id="sp2">
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-icon">$</div>
+      <div class="card-ttl">Kondisi keuangan saat ini</div>
+    </div>
+    <div class="card-body">
+      <div class="grid2">
+        <div class="field full">
+          <label class="lbl">Penghasilan bulanan bersih (semua sumber, setelah pajak)</label>
+          <div class="iw has-pfx">
+            <span class="pfx">Rp</span>
+            <input type="text" id="penghasilan" placeholder="5.000.000" oninput="fmtRp(this)" onblur="liveCalc()">
+          </div>
+          <div class="hint">Gabungkan semua: gaji + side income rutin yang bisa diandalkan tiap bulan</div>
+        </div>
+        <div class="field">
+          <label class="lbl">Pengeluaran rutin per bulan <span class="lbl-opt">(di luar cicilan)</span></label>
+          <div class="iw has-pfx">
+            <span class="pfx">Rp</span>
+            <input type="text" id="pengeluaran" placeholder="3.000.000" oninput="fmtRp(this)" onblur="liveCalc()">
+          </div>
+          <div class="hint">Makan, listrik, sekolah anak, transportasi, dll</div>
+        </div>
+        <div class="field">
+          <label class="lbl">Dana darurat saat ini</label>
+          <div class="iw has-pfx">
+            <span class="pfx">Rp</span>
+            <input type="text" id="dana" placeholder="10.000.000" oninput="fmtRp(this)" onblur="liveCalc()">
+          </div>
+          <div class="hint">Tabungan likuid yang bisa diakses kapan saja — di luar biaya bulan ini</div>
+        </div>
+        <div class="field">
+          <label class="lbl">Aset yang bisa dilikuidasi <span class="lbl-opt">(opsional)</span></label>
+          <div class="iw has-pfx">
+            <span class="pfx">Rp</span>
+            <input type="text" id="aset" placeholder="0" oninput="fmtRp(this)">
+          </div>
+          <div class="hint">Emas, kendaraan cadangan, investasi yang bisa dicairkan. Isi 0 jika tidak ada.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="live-prev" id="live-prev">
+    <div class="live-title">Gambaran kondisi awal</div>
+    <div class="live-grid" id="live-grid"></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-secondary" onclick="goStep(1)">← Kembali</button>
+    <button class="btn-primary" onclick="goStep(3)">Lanjut →</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     STEP 3 — KONDISI PERSONAL
+════════════════════════════════════════ -->
+<div class="step-pg" id="sp3">
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-icon">♥</div>
+      <div class="card-ttl">Kondisi keluarga & mental</div>
+    </div>
+    <div class="card-body">
+      <div class="field">
+        <label class="lbl">Jumlah tanggungan (pasangan + anak + orang tua yang bergantung padamu)</label>
+        <select id="tanggungan">
+          <option value="">Pilih...</option>
+          <option value="0">Tidak ada tanggungan</option>
+          <option value="1">1 orang</option>
+          <option value="2">2–3 orang</option>
+          <option value="3">4 orang atau lebih</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="lbl">Stabilitas sumber penghasilan</label>
+        <div class="radio-grp">
+          <label class="radio-item" onclick="selRadio(this,'stabilitas')">
+            <input type="radio" name="stabilitas" value="3">
+            <div class="rb"></div>
+            <div><div class="rl">Sangat stabil</div><div class="rl-sub">PNS / karyawan tetap perusahaan besar</div></div>
+          </label>
+          <label class="radio-item" onclick="selRadio(this,'stabilitas')">
+            <input type="radio" name="stabilitas" value="2">
+            <div class="rb"></div>
+            <div><div class="rl">Stabil</div><div class="rl-sub">Karyawan swasta, kontrak panjang</div></div>
+          </label>
+          <label class="radio-item" onclick="selRadio(this,'stabilitas')">
+            <input type="radio" name="stabilitas" value="1">
+            <div class="rb"></div>
+            <div><div class="rl">Cukup stabil</div><div class="rl-sub">Freelance rutin / wiraswasta mapan</div></div>
+          </label>
+          <label class="radio-item" onclick="selRadio(this,'stabilitas')">
+            <input type="radio" name="stabilitas" value="0">
+            <div class="rb"></div>
+            <div><div class="rl">Kurang stabil</div><div class="rl-sub">Proyek / musiman / tidak pasti</div></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">Kondisi mentalmu saat ini menghadapi ini</label>
+        <div class="radio-grp">
+          <label class="radio-item" onclick="selRadio(this,'mental')">
+            <input type="radio" name="mental" value="tenang">
+            <div class="rb"></div>
+            <div><div class="rl">Tenang</div><div class="rl-sub">Siap merencanakan dengan kepala dingin</div></div>
+          </label>
+          <label class="radio-item" onclick="selRadio(this,'mental')">
+            <input type="radio" name="mental" value="gelisah">
+            <div class="rb"></div>
+            <div><div class="rl">Gelisah</div><div class="rl-sub">Khawatir tapi masih bisa berpikir jernih</div></div>
+          </label>
+          <label class="radio-item" onclick="selRadio(this,'mental')">
+            <input type="radio" name="mental" value="tertekan">
+            <div class="rb"></div>
+            <div><div class="rl">Tertekan</div><div class="rl-sub">Sering overthinking, sulit fokus</div></div>
+          </label>
+          <label class="radio-item" onclick="selRadio(this,'mental')">
+            <input type="radio" name="mental" value="panik">
+            <div class="rb"></div>
+            <div><div class="rl">Panik</div><div class="rl-sub">Ingin keluar sekarang juga, sulit tidur</div></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">Kondisi pasanganmu soal ini</label>
+        <div class="radio-grp cols3">
+          <label class="radio-item" onclick="selRadio(this,'pasangan')">
+            <input type="radio" name="pasangan" value="tahu">
+            <div class="rb"></div>
+            <div><div class="rl">Tahu & mendukung</div></div>
+          </label>
+          <label class="radio-item" onclick="selRadio(this,'pasangan')">
+            <input type="radio" name="pasangan" value="sebagian">
+            <div class="rb"></div>
+            <div><div class="rl">Tahu sebagian</div></div>
+          </label>
+          <label class="radio-item" onclick="selRadio(this,'pasangan')">
+            <input type="radio" name="pasangan" value="tidak">
+            <div class="rb"></div>
+            <div><div class="rl">Belum tahu</div></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">Seberapa kuat niatmu untuk mulai berubah? <span id="niat-lbl" style="color:var(--gold);font-weight:700">7 / 10</span></label>
+        <div class="slider-row">
+          <span class="slider-end">Ragu</span>
+          <input type="range" id="niat" min="1" max="10" value="7" oninput="updSlider(this,'niat-lbl')">
+          <span class="slider-end">Siap penuh</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">Kekhawatiran terbesarmu saat ini <span class="lbl-opt">(opsional — tulis bebas)</span></label>
+        <input type="text" id="khawatir" placeholder="contoh: takut tidak bisa memenuhi kebutuhan anak sekolah, takut konflik dengan pasangan...">
+        <div class="hint">Semakin jelas, semakin personal analisis AI untuk kondisimu</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn-secondary" onclick="goStep(2)">← Kembali</button>
+    <button class="btn-primary" onclick="runAnalysis()">✦ Lihat Analisis Lengkapku</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     LOADING
+════════════════════════════════════════ -->
+<div class="loading-wrap" id="loading">
+  <div class="spinner"></div>
+  <div class="load-msg" id="load-msg">Membaca kondisimu dengan cermat...</div>
+  <div class="load-sub" id="load-sub">Ini memerlukan beberapa detik</div>
+  <div class="load-progress"><div class="load-bar"></div></div>
+</div>
+
+<!-- ════════════════════════════════════════
+     STEP 4 — HASIL
+════════════════════════════════════════ -->
+<div class="result-wrap" id="result">
+
+  <div id="r-level"></div>
+  <div class="redflag-card" id="r-redflag">
+    <div class="rf-title">⚠ Perhatian khusus untuk kondisimu</div>
+    <ul class="rf-list" id="r-rf-list"></ul>
+  </div>
+
+  <div class="score-section">
+    <div class="sec-label">Indikator kesehatan finansial</div>
+    <div id="r-scores"></div>
+  </div>
+
+  <div class="breakdown-card" id="r-breakdown">
+    <div class="bk-hd">
+      <div class="card-icon">Rp</div>
+      <div class="bk-ttl">Rincian beban per jenis utang</div>
+    </div>
+    <div id="r-bk-rows"></div>
+    <div class="bk-total">
+      <span class="bk-total-lbl">Total bunga yang masih harus dibayar</span>
+      <span class="bk-total-val" id="r-total-bunga">—</span>
+    </div>
+  </div>
+
+  <div class="sum-grid" id="r-sumgrid"></div>
+
+  <div class="scenario-card">
+    <div class="sc-hd">
+      <div class="sc-ttl">Simulasi: kapan bisa bebas dari semua kewajiban ini?</div>
+      <div class="sc-sub">Proyeksi berdasarkan kondisi saat ini vs skenario percepatan</div>
+    </div>
+    <div class="sc-grid" id="r-scenarios"></div>
+  </div>
+
+  <div class="divider"><span>Analisis & Rekomendasi Personal dari AI</span></div>
+
+  <div class="ai-card">
+    <div class="ai-hd">
+      <div class="ai-icon">✦</div>
+      <div>
+        <div class="ai-hd-ttl">Penilaian kondisimu</div>
+        <div class="ai-hd-sub">Dianalisis oleh Gemini AI · Berdasarkan data yang kamu isi</div>
+      </div>
+    </div>
+    <div class="ai-body" id="r-ai"><span class="cursor"></span></div>
+  </div>
+
+  <div class="opsi-card">
+    <div class="opsi-hd">
+      <div class="opsi-hd-ttl">5 Opsi keluar dari riba</div>
+      <div class="opsi-hd-sub">Dari ebook Terlanjur Riba · Opsi paling sesuai untukmu ditandai</div>
+    </div>
+    <div id="r-opsi"></div>
+  </div>
+
+  <div class="steps-card">
+    <div class="steps-hd">
+      <div class="steps-hd-ttl">Langkah konkret yang bisa dimulai</div>
+      <div class="steps-hd-sub">Personal berdasarkan kondisimu · Diurutkan dari yang paling mudah</div>
+    </div>
+    <div id="r-steps"><div style="padding:20px 24px;color:var(--ink45);font-size:13px">Menyiapkan langkah konkret...</div></div>
+  </div>
+
+  <div class="disc">
+    <div class="disc-text"><strong>Catatan penting:</strong> Hasil ini adalah panduan awal berdasarkan data yang kamu isi — bukan fatwa dan bukan pengganti nasihat ulama atau konsultan keuangan syariah. Setiap kondisi manusia unik dan kompleks. Gunakan ini sebagai peta awal, bukan perintah tunggal.</div>
+    <div class="disc-author">Tools ini dibuat oleh Achmad Alief · Ebook Terlanjur Riba · jalanpulang.id</div>
+  </div>
+
+  <div class="export-row">
+    <button class="btn-gold" id="btn-pdf" onclick="exportPDF()">⬇ Unduh Laporan PDF</button>
+    <button class="btn-outline" onclick="resetAll()">← Isi Ulang</button>
+  </div>
+
+</div>
+</div><!-- /page -->
+
+<script>
+/* ══════════════════════════════════════════════════
+   CONFIG
+══════════════════════════════════════════════════ */
+const API_BASE = '/api'; // Vercel serverless functions
+
+const UTANG_CFG = {
+  kpr:       { label: 'KPR', cls: 'tb-kpr',       defBunga: 10, defTenor: 180 },
+  kendaraan: { label: 'Kendaraan', cls: 'tb-kendaraan', defBunga: 14, defTenor: 36 },
+  kk:        { label: 'Kartu Kredit', cls: 'tb-kk',   defBunga: 24, defTenor: 12 },
+  pinjol:    { label: 'Pinjol/Paylater', cls: 'tb-pinjol', defBunga: 36, defTenor: 6 },
+  kta:       { label: 'KTA/Pinjaman', cls: 'tb-kta',  defBunga: 18, defTenor: 24 },
+};
+
+let utangItems = [], uid = 0;
+let resultData = {}; // simpan untuk PDF
+
+/* ══════════════════════════════════════════════════
+   FORMAT HELPERS
+══════════════════════════════════════════════════ */
+function fmtRp(el) {
+  const v = el.value.replace(/[^\d]/g, '');
+  el.value = v ? parseInt(v).toLocaleString('id-ID') : '';
+}
+function parseRp(s) { return parseInt((s || '0').replace(/[^\d]/g, '')) || 0; }
+function rpStr(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
+function toJuta(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + ' M';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + ' jt';
+  return rpStr(n);
+}
+function monthsToStr(m) {
+  const y = Math.floor(m / 12), mo = m % 12;
+  if (y === 0) return mo + ' bulan';
+  if (mo === 0) return y + ' tahun';
+  return y + ' thn ' + mo + ' bln';
+}
+
+/* ══════════════════════════════════════════════════
+   SLIDER & RADIO
+══════════════════════════════════════════════════ */
+function updSlider(el, outId) {
+  const pct = (el.value - el.min) / (el.max - el.min) * 100;
+  el.style.setProperty('--pct', pct + '%');
+  if (outId) document.getElementById(outId).textContent = el.value + ' / 10';
+}
+updSlider(document.getElementById('niat'), 'niat-lbl');
+
+function selRadio(el, name) {
+  document.querySelectorAll(`[name="${name}"]`).forEach(r => r.closest('.radio-item').classList.remove('sel'));
+  el.classList.add('sel');
+  el.querySelector('input').checked = true;
+}
+function getRadio(name) {
+  const el = document.querySelector(`[name="${name}"]:checked`);
+  return el?.value || '';
+}
+
+/* ══════════════════════════════════════════════════
+   UTANG MANAGEMENT
+══════════════════════════════════════════════════ */
+function addUtang(type) {
+  const id = ++uid;
+  utangItems.push({ id, type });
+  const cfg = UTANG_CFG[type];
+  const el = document.createElement('div');
+  el.className = 'utang-item';
+  el.id = 'ui-' + id;
+  el.innerHTML = `
+    <div class="utang-item-hd">
+      <span class="type-badge ${cfg.cls}">${cfg.label}</span>
+      <span class="utang-sub">Isi data detail di bawah ini</span>
+    </div>
+    <button class="del-btn" onclick="delUtang(${id})" title="Hapus">×</button>
+    <div class="grid2">
+      <div class="field">
+        <label class="lbl">Sisa pokok utang</label>
+        <div class="iw has-pfx"><span class="pfx">Rp</span>
+          <input type="text" id="u${id}-pokok" placeholder="150.000.000" oninput="fmtRp(this);calcUtang(${id})">
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">Cicilan per bulan</label>
+        <div class="iw has-pfx"><span class="pfx">Rp</span>
+          <input type="text" id="u${id}-cicilan" placeholder="2.500.000" oninput="fmtRp(this);calcUtang(${id})">
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">Sisa tenor</label>
+        <div class="iw has-sfx">
+          <input type="number" id="u${id}-tenor" placeholder="${cfg.defTenor}" min="1" max="480" oninput="calcUtang(${id})">
+          <span class="sfx">bulan</span>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">Suku bunga / biaya</label>
+        <div class="iw has-sfx">
+          <input type="number" id="u${id}-bunga" placeholder="${cfg.defBunga}" min="0" max="200" step="0.5" oninput="calcUtang(${id})">
+          <span class="sfx">% / thn</span>
+        </div>
+      </div>
+      <div class="full">
+        <div class="utang-calc" id="u${id}-calc"></div>
+      </div>
+    </div>`;
+  document.getElementById('utang-list').appendChild(el);
+}
+
+function delUtang(id) {
+  document.getElementById('ui-' + id)?.remove();
+  utangItems = utangItems.filter(u => u.id !== id);
+}
+
+function calcUtang(id) {
+  const pokok = parseRp(document.getElementById('u' + id + '-pokok')?.value || '');
+  const cicilan = parseRp(document.getElementById('u' + id + '-cicilan')?.value || '');
+  const tenor = parseInt(document.getElementById('u' + id + '-tenor')?.value) || 0;
+  const calc = document.getElementById('u' + id + '-calc');
+  if (!calc) return;
+  if (pokok && cicilan && tenor) {
+    const total = cicilan * tenor;
+    const bunga = Math.max(0, total - pokok);
+    const pct = pokok > 0 ? (bunga / pokok * 100).toFixed(1) : 0;
+    calc.className = 'utang-calc show';
+    calc.innerHTML = bunga > 0
+      ? `Total dibayar sampai lunas: <strong>${rpStr(total)}</strong> — dari jumlah itu, <strong style="color:var(--red)">${rpStr(bunga)} (${pct}%)</strong> adalah bunga/biaya yang dibayar di atas pokok.`
+      : `Total dibayar sampai lunas: <strong>${rpStr(total)}</strong>`;
+  } else {
+    calc.className = 'utang-calc';
+  }
+  liveCalc();
+}
+
+function getUtangData() {
+  return utangItems.map(u => {
+    const pokok = parseRp(document.getElementById('u' + u.id + '-pokok')?.value || '');
+    const cicilan = parseRp(document.getElementById('u' + u.id + '-cicilan')?.value || '');
+    const tenor = parseInt(document.getElementById('u' + u.id + '-tenor')?.value) || 0;
+    const bunga = parseFloat(document.getElementById('u' + u.id + '-bunga')?.value) || UTANG_CFG[u.type].defBunga;
+    const totalBayar = cicilan * tenor;
+    const totalBunga = Math.max(0, totalBayar - pokok);
+    return { ...u, label: UTANG_CFG[u.type].label, pokok, cicilan, tenor, bunga, totalBayar, totalBunga };
+  }).filter(u => u.pokok > 0 || u.cicilan > 0);
+}
+
+/* ══════════════════════════════════════════════════
+   LIVE CALC (step 2 preview)
+══════════════════════════════════════════════════ */
+function liveCalc() {
+  const penghasilan = parseRp(document.getElementById('penghasilan')?.value);
+  const dana = parseRp(document.getElementById('dana')?.value);
+  const pengeluaran = parseRp(document.getElementById('pengeluaran')?.value);
+  if (!penghasilan) { document.getElementById('live-prev').classList.remove('show'); return; }
+  const utang = getUtangData();
+  const totalCicilan = utang.reduce((s, u) => s + u.cicilan, 0);
+  const dti = totalCicilan / penghasilan * 100;
+  const sisa = penghasilan - totalCicilan - pengeluaran;
+  const danaBulan = dana / penghasilan;
+  const dtiC = dti > 50 ? 'c-red' : dti > 35 ? 'c-amber' : 'c-green';
+  const sisaC = sisa < 0 ? 'c-red' : sisa < penghasilan * 0.1 ? 'c-amber' : 'c-green';
+  const danaC = danaBulan < 1 ? 'c-red' : danaBulan < 3 ? 'c-amber' : 'c-green';
+  document.getElementById('live-prev').classList.add('show');
+  document.getElementById('live-grid').innerHTML = `
+    <div class="live-card"><div class="live-lbl">Rasio cicilan</div><div class="live-val ${dtiC}">${Math.round(dti)}%</div><div class="live-sub">${dti < 30 ? 'Sehat' : dti < 50 ? 'Perlu diperhatikan' : 'Terlalu tinggi'}</div></div>
+    <div class="live-card"><div class="live-lbl">Sisa bebas/bln</div><div class="live-val ${sisaC}">${sisa >= 0 ? toJuta(sisa) : '-' + toJuta(-sisa)}</div><div class="live-sub">${sisa < 0 ? 'Defisit!' : sisa < penghasilan * 0.1 ? 'Sangat terbatas' : 'Ada ruang gerak'}</div></div>
+    ${dana > 0 ? `<div class="live-card"><div class="live-lbl">Dana darurat</div><div class="live-val ${danaC}">${danaBulan.toFixed(1)} bln</div><div class="live-sub">${danaBulan < 1 ? 'Sangat minim' : danaBulan < 3 ? 'Perlu ditambah' : 'Cukup aman'}</div></div>` : ''}
+    ${totalCicilan > 0 ? `<div class="live-card"><div class="live-lbl">Total cicilan/bln</div><div class="live-val">${toJuta(totalCicilan)}</div><div class="live-sub">Dari ${utang.length} jenis utang</div></div>` : ''}`;
+}
+
+/* ══════════════════════════════════════════════════
+   STEP NAVIGATION
+══════════════════════════════════════════════════ */
+let curStep = 1;
+function goStep(n) {
+  if (n === 2 && getUtangData().length === 0) {
+    alert('Tambahkan minimal satu jenis utang terlebih dahulu.');
+    return;
+  }
+  if (n === 3 && !parseRp(document.getElementById('penghasilan').value)) {
+    alert('Isi penghasilan bulanan terlebih dahulu.');
+    return;
+  }
+  document.getElementById('sp' + curStep)?.classList.remove('active');
+  document.getElementById('sp' + n)?.classList.add('active');
+  ['si1', 'si2', 'si3', 'si4'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.classList.remove('active', 'done');
+    if (i + 1 < n) el.classList.add('done');
+    else if (i + 1 === n) el.classList.add('active');
+  });
+  curStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ══════════════════════════════════════════════════
+   SCORING ENGINE
+══════════════════════════════════════════════════ */
+function scoreAll(d) {
+  const { penghasilan, totalCicilan, totalPokok, danaDarurat, pengeluaran, stabilitas, tanggungan } = d;
+  let score = 0, maxScore = 0;
+  const details = [];
+
+  const dti = totalCicilan / Math.max(1, penghasilan);
+  maxScore += 4;
+  if (dti >= 0.6) { score += 4; details.push({ label: 'Rasio cicilan/penghasilan', val: Math.round(dti * 100) + '%', status: 'berat', note: 'Jauh melampaui batas aman 30%', barW: 95 }); }
+  else if (dti >= 0.45) { score += 3; details.push({ label: 'Rasio cicilan/penghasilan', val: Math.round(dti * 100) + '%', status: 'berat', note: 'Di atas batas aman 30%', barW: 75 }); }
+  else if (dti >= 0.30) { score += 2; details.push({ label: 'Rasio cicilan/penghasilan', val: Math.round(dti * 100) + '%', status: 'sedang', note: 'Mendekati batas aman', barW: 55 }); }
+  else if (dti >= 0.15) { score += 1; details.push({ label: 'Rasio cicilan/penghasilan', val: Math.round(dti * 100) + '%', status: 'ringan', note: 'Masih dalam batas wajar', barW: 30 }); }
+  else { details.push({ label: 'Rasio cicilan/penghasilan', val: Math.round(dti * 100) + '%', status: 'ok', note: 'Sangat sehat', barW: 12 }); }
+
+  const free = penghasilan - totalCicilan - pengeluaran;
+  maxScore += 3;
+  if (free < 0) { score += 3; details.push({ label: 'Arus kas bebas per bulan', val: '-' + toJuta(-free), status: 'berat', note: 'Defisit — cicilan melebihi penghasilan!', barW: 100 }); }
+  else if (free < penghasilan * 0.1) { score += 2; details.push({ label: 'Arus kas bebas per bulan', val: toJuta(free), status: 'sedang', note: 'Sangat sempit, hampir tidak ada ruang', barW: 70 }); }
+  else if (free < penghasilan * 0.2) { score += 1; details.push({ label: 'Arus kas bebas per bulan', val: toJuta(free), status: 'ringan', note: 'Terbatas, perlu dikelola ketat', barW: 40 }); }
+  else { details.push({ label: 'Arus kas bebas per bulan', val: toJuta(free), status: 'ok', note: 'Ada ruang gerak yang cukup', barW: 15 }); }
+
+  const danaBulan = danaDarurat / Math.max(1, penghasilan);
+  maxScore += 3;
+  if (danaBulan < 1) { score += 3; details.push({ label: 'Kecukupan dana darurat', val: danaBulan.toFixed(1) + ' bulan', status: 'berat', note: 'Tidak ada jaring pengaman finansial', barW: 95 }); }
+  else if (danaBulan < 2) { score += 2; details.push({ label: 'Kecukupan dana darurat', val: danaBulan.toFixed(1) + ' bulan', status: 'sedang', note: 'Sangat minim, idealnya 3–6 bulan', barW: 65 }); }
+  else if (danaBulan < 4) { score += 1; details.push({ label: 'Kecukupan dana darurat', val: danaBulan.toFixed(1) + ' bulan', status: 'ringan', note: 'Perlu ditambah ke 3–6 bulan', barW: 38 }); }
+  else { details.push({ label: 'Kecukupan dana darurat', val: danaBulan.toFixed(1) + ' bulan', status: 'ok', note: 'Cukup aman', barW: 14 }); }
+
+  const debtRatio = totalPokok / Math.max(1, penghasilan * 12);
+  maxScore += 3;
+  if (debtRatio >= 6) { score += 3; details.push({ label: 'Total utang vs penghasilan tahunan', val: debtRatio.toFixed(1) + '× gaji tahunan', status: 'berat', note: 'Sangat berat — lebih dari 6 tahun gaji', barW: 95 }); }
+  else if (debtRatio >= 3) { score += 2; details.push({ label: 'Total utang vs penghasilan tahunan', val: debtRatio.toFixed(1) + '× gaji tahunan', status: 'sedang', note: 'Signifikan, perlu perhatian serius', barW: 68 }); }
+  else if (debtRatio >= 1) { score += 1; details.push({ label: 'Total utang vs penghasilan tahunan', val: debtRatio.toFixed(1) + '× gaji tahunan', status: 'ringan', note: 'Masih dalam batas terkendali', barW: 38 }); }
+  else { details.push({ label: 'Total utang vs penghasilan tahunan', val: debtRatio.toFixed(1) + '× gaji tahunan', status: 'ok', note: 'Ringan', barW: 14 }); }
+
+  const stabV = parseInt(stabilitas) || 1;
+  maxScore += 2;
+  if (stabV === 0) { score += 2; details.push({ label: 'Stabilitas penghasilan', val: 'Tidak stabil', status: 'sedang', note: 'Risiko lebih tinggi jika penghasilan terganggu', barW: 70 }); }
+  else if (stabV === 1) { score += 1; details.push({ label: 'Stabilitas penghasilan', val: 'Cukup stabil', status: 'ringan', note: 'Ada risiko yang perlu diantisipasi', barW: 35 }); }
+  else { details.push({ label: 'Stabilitas penghasilan', val: 'Stabil', status: 'ok', note: 'Modal penting untuk perubahan terencana', barW: 12 }); }
+
+  const tangV = parseInt(tanggungan) || 0;
+  maxScore += 2;
+  if (tangV >= 3) { score += 2; details.push({ label: 'Tanggungan keluarga', val: '4+ orang', status: 'sedang', note: 'Perubahan harus sangat terencana dan tidak terburu-buru', barW: 68 }); }
+  else if (tangV >= 2) { score += 1; details.push({ label: 'Tanggungan keluarga', val: '2–3 orang', status: 'ringan', note: 'Perlu koordinasi dan komunikasi keluarga', barW: 35 }); }
+  else if (tangV === 1) { details.push({ label: 'Tanggungan keluarga', val: '1 orang', status: 'ok', note: 'Masih relatif fleksibel', barW: 15 }); }
+  else { details.push({ label: 'Tanggungan keluarga', val: 'Tidak ada', status: 'ok', note: 'Paling fleksibel untuk bergerak', barW: 8 }); }
+
+  const pct = score / maxScore;
+  const level = pct > 0.60 ? 'berat' : pct > 0.35 ? 'sedang' : 'ringan';
+  return { score, maxScore, pct, level, details, free, danaBulan, dti };
+}
+
+/* ══════════════════════════════════════════════════
+   RED FLAGS
+══════════════════════════════════════════════════ */
+function getRedFlags(d, sc) {
+  const flags = [];
+  if (sc.free < 0) flags.push('Cicilan + pengeluaran melebihi penghasilan — kamu merugi setiap bulan dan kondisi ini tidak sustainable');
+  if (sc.dti > 0.5) flags.push(`Rasio cicilan ${Math.round(sc.dti * 100)}% jauh melampaui batas aman internasional 30–35%`);
+  if (sc.danaBulan < 1) flags.push('Dana darurat hampir tidak ada — satu kejadian darurat kecil bisa memperparah kondisi secara signifikan');
+  if (d.utang.some(u => u.type === 'pinjol' && u.cicilan > 0)) flags.push('Ada pinjol/paylater aktif — jenis riba dengan bunga tertinggi (bisa 36–100%/thn), prioritaskan untuk ditutup pertama kali');
+  if (d.utang.filter(u => u.cicilan > 0).length >= 4) flags.push('Terlalu banyak jenis cicilan (4+) — risiko kehilangan kendali dan sulit memprioritaskan pembayaran');
+  if (d.utang.some(u => u.bunga >= 30)) flags.push('Ada utang dengan bunga ≥30%/tahun — beban berlipat sangat cepat, setiap bulan penundaan sangat mahal');
+  if (d.pasangan === 'tidak' && parseInt(d.tanggungan) >= 1) flags.push('Pasangan belum tahu kondisi ini — keputusan finansial besar tanpa komunikasi pasangan sering berakhir konflik serius');
+  return flags;
+}
+
+/* ══════════════════════════════════════════════════
+   SCENARIOS
+══════════════════════════════════════════════════ */
+function calcScenarios(d, sc) {
+  const maxTenor = Math.max(...d.utang.map(u => u.tenor || 36), 36);
+  const totalBunga = d.utang.reduce((s, u) => s + u.totalBunga, 0);
+  const extraAble = Math.max(0, sc.free * 0.6);
+
+  return [
+    {
+      label: 'Bayar minimum saja',
+      months: maxTenor,
+      bunga: totalBunga,
+      extra: 0,
+      desc: 'Jalur saat ini tanpa perubahan',
+      rec: false
+    },
+    {
+      label: 'Percepat +20%',
+      months: Math.max(6, Math.round(maxTenor * 0.72)),
+      bunga: totalBunga * 0.68,
+      extra: d.totalCicilan * 0.2,
+      desc: 'Tambah sedikit tiap bulan, konsisten',
+      rec: true
+    },
+    {
+      label: 'Agresif maksimal',
+      months: extraAble > 0 ? Math.max(4, Math.round(maxTenor * 0.50)) : maxTenor,
+      bunga: totalBunga * 0.42,
+      extra: extraAble,
+      desc: 'Pangkas gaya hidup agresif',
+      rec: false
+    },
+  ];
+}
+
+/* ══════════════════════════════════════════════════
+   OPSI KELUAR
+══════════════════════════════════════════════════ */
+function getOpsi(d, sc) {
+  const OPSI = [
+    { id: 1, title: 'Bertahan sementara, tutup semua pintu riba baru', desc: 'Tidak menambah cicilan apapun, fokus menyelesaikan yang ada sambil mempersiapkan strategi keluar secara bertahap.' },
+    { id: 2, title: 'Percepat pelunasan dengan pengorbanan gaya hidup', desc: 'Pangkas pengeluaran tidak esensial, arahkan semuanya untuk melunasi cicilan berbunga paling tinggi atau paling kecil lebih dulu (metode avalanche/snowball).' },
+    { id: 3, title: 'Pindah ke zona abu-abu sebagai jembatan transisi', desc: 'Kurangi keterlibatan langsung dalam riba sambil menyiapkan sumber penghasilan alternatif. Bukan tujuan akhir — hanya jembatan.' },
+    { id: 4, title: 'Banting setir total', desc: 'Resign, tutup bisnis berbasis riba, pindah total ke sumber penghasilan baru. Risiko tinggi, butuh persiapan finansial dan mental yang sangat matang.' },
+    { id: 5, title: 'Hijrah finansial bertahap (paling sustainable)', desc: 'Kurangi keterikatan riba secara sistematis. Siapkan alternatif, uji coba kecil, bangun stabilitas baru, baru lepas total. Proses panjang tapi paling sedikit menimbulkan kerusakan.' },
+  ];
+  let recId = 5;
+  if (sc.level === 'berat' || sc.free < 0 || d.mental === 'panik') recId = 1;
+  else if (sc.level === 'sedang' && sc.danaBulan < 2) recId = 2;
+  else if (d.pekerjaan === 'langsung' || d.pekerjaan === 'bisnis') recId = 3;
+  else if (sc.danaBulan > 6 && parseInt(d.stabilitas) >= 2 && sc.free > d.penghasilan * 0.3) recId = 4;
+  return OPSI.map(o => ({ ...o, rec: o.id === recId }));
+}
+
+/* ══════════════════════════════════════════════════
+   RENDER STATIC RESULTS
+══════════════════════════════════════════════════ */
+function renderStatic(d, sc, flags, scenarios, opsi) {
+  const LV = {
+    ringan: { eye: 'Level 1 — Ringan', title: 'Kamu masih punya ruang gerak', desc: 'Kondisimu relatif terkendali. Ini kabar baik — kamu masih punya waktu untuk merencanakan perubahan dengan tenang. Manfaatkan momen ini sebelum situasi berubah.' },
+    sedang: { eye: 'Level 2 — Sedang', title: 'Perlu perhatian dan rencana yang nyata', desc: 'Tekanan sudah mulai terasa secara nyata. Ini bukan kondisi darurat, tapi jika dibiarkan tanpa langkah konkret, bisa semakin berat. Sekarang waktu yang tepat untuk mulai bergerak.' },
+    berat:  { eye: 'Level 3 — Berat', title: 'Butuh langkah terukur & sangat bertahap', desc: 'Kondisimu cukup berat dan memerlukan perhatian serius. Tapi ingat — ini bukan akhir. Di sini, kehati-hatian dan rencana matang jauh lebih penting dari keputusan yang terburu-buru.' },
+  };
+  const lv = LV[sc.level];
+  document.getElementById('r-level').innerHTML = `
+    <div class="lv-card ${sc.level}">
+      <div class="lv-eye">${lv.eye}</div>
+      <div class="lv-title">${lv.title}</div>
+      <div class="lv-desc">${lv.desc}</div>
+      <div class="lv-score">Skor risiko: ${sc.score} / ${sc.maxScore} poin</div>
+    </div>`;
+
+  if (flags.length > 0) {
+    document.getElementById('r-redflag').classList.add('show');
+    document.getElementById('r-rf-list').innerHTML = flags.map(f => `<li class="rf-item"><div class="rf-dot"></div>${f}</li>`).join('');
+  }
+
+  const SC_COLOR = { berat: 'c-red', sedang: 'c-amber', ringan: 'c-green', ok: 'c-green' };
+  const BAR_CLS = { berat: 'bar-red', sedang: 'bar-amber', ringan: 'bar-teal', ok: 'bar-teal' };
+  document.getElementById('r-scores').innerHTML = sc.details.map(det => `
+    <div class="score-row">
+      <div class="score-row-hd">
+        <span class="score-lbl">${det.label}</span>
+        <span class="score-v ${SC_COLOR[det.status] || ''}">${det.val}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill ${BAR_CLS[det.status]}" style="width:${det.barW}%"></div></div>
+      <div class="score-note">${det.note}</div>
+    </div>`).join('');
+
+  if (d.utang.length > 0) {
+    document.getElementById('r-bk-rows').innerHTML = d.utang.map(u => `
+      <div class="bk-row">
+        <div class="bk-left">
+          <span class="type-badge ${UTANG_CFG[u.type].cls}">${u.label}</span>
+          <div class="bk-info">
+            <div class="bk-name">${rpStr(u.pokok)} sisa pokok</div>
+            <div class="bk-detail">${u.tenor} bulan lagi · ${u.bunga}% / tahun</div>
+          </div>
+        </div>
+        <div class="bk-right">
+          <div class="bk-cicilan">${rpStr(u.cicilan)}<span style="font-size:11px;font-weight:400;color:var(--ink45)">/bln</span></div>
+          ${u.totalBunga > 0 ? `<div class="bk-bunga">+${rpStr(u.totalBunga)} bunga</div>` : ''}
+        </div>
+      </div>`).join('');
+    document.getElementById('r-total-bunga').textContent = rpStr(d.totalBunga);
+  }
+
+  const statusC = (v, ok, warn) => v >= ok ? 'c-green' : v >= warn ? 'c-amber' : 'c-red';
+  document.getElementById('r-sumgrid').innerHTML = `
+    <div class="sum-card">
+      <div class="sum-lbl">Total bunga tersisa</div>
+      <div class="sum-val c-red">${toJuta(d.totalBunga)}</div>
+      <div class="sum-sub" style="color:var(--red)">Yang bisa dihemat jika dipercepat</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-lbl">Arus kas bebas</div>
+      <div class="sum-val ${sc.free >= 0 ? statusC(sc.free / Math.max(1, d.penghasilan), 0.2, 0.1) : 'c-red'}">${sc.free >= 0 ? toJuta(sc.free) : '-' + toJuta(-sc.free)}</div>
+      <div class="sum-sub ${sc.free < 0 ? 'c-red' : ''}">${sc.free < 0 ? 'Defisit setiap bulan!' : 'Per bulan setelah semua kewajiban'}</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-lbl">Dana darurat</div>
+      <div class="sum-val ${statusC(sc.danaBulan, 4, 2)}">${sc.danaBulan.toFixed(1)} bln</div>
+      <div class="sum-sub">${sc.danaBulan < 1 ? 'Sangat minim!' : sc.danaBulan < 3 ? 'Perlu ditambah' : 'Cukup aman'}</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-lbl">Rasio cicilan</div>
+      <div class="sum-val ${sc.dti > 0.5 ? 'c-red' : sc.dti > 0.35 ? 'c-amber' : 'c-green'}">${Math.round(sc.dti * 100)}%</div>
+      <div class="sum-sub">${sc.dti < 0.3 ? 'Sehat (< 30%)' : sc.dti < 0.5 ? 'Perlu diperhatikan' : 'Berbahaya (> 50%)'}</div>
+    </div>`;
+
+  document.getElementById('r-scenarios').innerHTML = scenarios.map(sc => `
+    <div class="sc-item ${sc.rec ? 'rec' : ''}">
+      <div class="sc-ilbl">${sc.label}</div>
+      <div class="sc-year">${monthsToStr(sc.months)}</div>
+      <div class="sc-ydesc">Estimasi bebas dari semua cicilan</div>
+      <div class="sc-bunga">Bunga tersisa: ${toJuta(sc.bunga)}</div>
+      ${sc.extra > 0 ? `<div class="sc-extra">Tambah ${rpStr(sc.extra)}/bln</div>` : ''}
+      ${sc.rec ? `<div><span class="sc-rec-badge">★ Paling realistis</span></div>` : ''}
+    </div>`).join('');
+
+  document.getElementById('r-opsi').innerHTML = opsi.map(o => `
+    <div class="opsi-row ${o.rec ? 'rec' : ''}">
+      <div class="opsi-num ${o.rec ? 'recn' : 'def'}">${o.id}</div>
+      <div>
+        <div class="opsi-ttl">${o.title}${o.rec ? '<span class="opsi-badge">Untukmu</span>' : ''}</div>
+        <div class="opsi-desc">${o.desc}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   MAIN ANALYSIS
+══════════════════════════════════════════════════ */
+async function runAnalysis() {
+  const tanggungan = document.getElementById('tanggungan').value;
+  const stabilitas = getRadio('stabilitas');
+  const mental = getRadio('mental');
+  const pasangan = getRadio('pasangan');
+  const pekerjaan = getRadio('pekerjaan');
+  const niat = document.getElementById('niat').value;
+  const khawatir = document.getElementById('khawatir').value;
+  const nama = document.getElementById('nama').value.trim();
+  const kota = document.getElementById('kota').value.trim();
+
+  if (!tanggungan || !stabilitas || !mental) {
+    alert('Mohon lengkapi kondisi keluarga & mentalmu terlebih dahulu.');
+    return;
+  }
+
+  const penghasilan = parseRp(document.getElementById('penghasilan').value);
+  const pengeluaran = parseRp(document.getElementById('pengeluaran').value);
+  const danaDarurat = parseRp(document.getElementById('dana').value);
+  const asetLikuid = parseRp(document.getElementById('aset').value);
+  const utang = getUtangData();
+
+  const totalCicilan = utang.reduce((s, u) => s + u.cicilan, 0);
+  const totalPokok = utang.reduce((s, u) => s + u.pokok, 0);
+  const totalBunga = utang.reduce((s, u) => s + u.totalBunga, 0);
+
+  const d = { penghasilan, pengeluaran, danaDarurat, asetLikuid, utang, totalCicilan, totalPokok, totalBunga, tanggungan, stabilitas, mental, pasangan, pekerjaan, niat, khawatir, nama, kota };
+  const sc = scoreAll(d);
+  const flags = getRedFlags(d, sc);
+  const scenarios = calcScenarios(d, sc);
+  const opsi = getOpsi(d, sc);
+
+  // Store for PDF
+  resultData = { d, sc, flags, scenarios, opsi };
+
+  // Show loading
+  document.getElementById('sp3').classList.remove('active');
+  ['si1', 'si2', 'si3'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('active'); el.classList.add('done');
+  });
+  document.getElementById('si4').classList.add('active');
+  const loadEl = document.getElementById('loading');
+  loadEl.classList.add('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const msgs = [
+    ['Membaca kondisi keuanganmu...', 'Menghitung rasio beban utang'],
+    ['Menganalisis setiap jenis utang...', 'Menghitung total bunga yang masih tersisa'],
+    ['Memetakan skenario keluar terbaik...', 'Berdasarkan kondisi dan kapasitasmu'],
+    ['Menyusun rekomendasi personal...', 'Hampir selesai — mohon tunggu'],
+  ];
+  let mi = 0;
+  const msgInv = setInterval(() => {
+    const [a, b] = msgs[mi % msgs.length];
+    document.getElementById('load-msg').textContent = a;
+    document.getElementById('load-sub').textContent = b;
+    mi++;
+  }, 2200);
+
+  // Build prompts
+  const utangDesc = utang.map(u =>
+    `- ${u.label}: sisa pokok ${rpStr(u.pokok)}, cicilan ${rpStr(u.cicilan)}/bulan, tenor ${u.tenor} bulan, bunga ${u.bunga}%/tahun → total bunga tersisa: ${rpStr(u.totalBunga)}`
+  ).join('\n');
+
+  const opsiRec = opsi.find(o => o.rec);
+  const stabMap = { '3': 'sangat stabil (PNS/karyawan tetap besar)', '2': 'stabil (karyawan swasta)', '1': 'cukup stabil (freelance/wiraswasta)', '0': 'kurang stabil/musiman/proyek' };
+  const mentalMap = { tenang: 'tenang dan siap merencanakan', gelisah: 'gelisah tapi masih bisa berpikir jernih', tertekan: 'cukup tertekan, sering overthinking', panik: 'dalam kondisi panik, ingin keluar sekarang juga' };
+  const pasMap = { tahu: 'tahu dan mendukung perubahan', sebagian: 'tahu sebagian kondisi ini', tidak: 'belum tahu sama sekali tentang kondisi ini' };
+  const pekMap = { tidak: 'tidak terkait industri riba', abu: 'zona abu-abu (perusahaan umum)', langsung: 'bekerja langsung di industri berbasis riba (bank/leasing)', bisnis: 'memiliki usaha yang melibatkan akad riba' };
+
+  const systemP = `Kamu adalah konselor keuangan syariah yang menulis ebook "Terlanjur Riba" — sebuah panduan bertahap dan manusiawi untuk Muslim yang ingin keluar dari riba tanpa merusak keluarga. Nama penulisnya Achmad Alief dari jalanpulang.id.
+
+Karaktermu: empatik, tidak menghakimi, realistis, hangat, dan manusiawi. Kamu percaya bahwa kebanyakan orang masuk riba bukan karena meremehkan agama, tapi karena keterbatasan pilihan. Perubahan adalah proses, bukan momen tunggal.
+
+Lima prinsip utamamu:
+1. Bertahap bukan tanda lemah iman
+2. Menjaga keluarga adalah amanah
+3. Kapasitas setiap orang berbeda
+4. Mengurangi keterikatan juga bagian dari perubahan
+5. Taubat adalah arah, bukan sekadar momen
+
+Tulis dalam bahasa Indonesia yang hangat, natural, tidak formal, dan tidak menggurui. Seperti seorang teman yang paham keuangan syariah berbicara dengan jujur dan peduli.`;
+
+  const userP = `Seorang Muslim meminta analisis kondisi keuangannya:
+
+${nama ? `NAMA: ${nama}${kota ? ' dari ' + kota : ''}\n` : ''}
+KONDISI UTANG:
+${utangDesc || '(tidak ada data utang spesifik)'}
+Total cicilan/bulan: ${rpStr(totalCicilan)} (${Math.round(sc.dti * 100)}% dari penghasilan)
+Total pokok: ${rpStr(totalPokok)}
+Total bunga yang masih harus dibayar: ${rpStr(totalBunga)}
+
+KONDISI KEUANGAN:
+- Penghasilan bulanan: ${rpStr(penghasilan)}
+- Pengeluaran rutin (non-cicilan): ${rpStr(pengeluaran)}
+- Arus kas bebas per bulan: ${rpStr(sc.free)} ${sc.free < 0 ? '(DEFISIT!)' : ''}
+- Dana darurat: ${rpStr(danaDarurat)} (${sc.danaBulan.toFixed(1)} bulan penghasilan)
+- Aset likuid: ${rpStr(asetLikuid)}
+
+PROFIL PERSONAL:
+- Tanggungan keluarga: ${['tidak ada', '1 orang', '2-3 orang', '4+ orang'][parseInt(tanggungan) || 0]}
+- Stabilitas penghasilan: ${stabMap[stabilitas] || stabilitas}
+- Kondisi mental: ${mentalMap[mental] || mental}
+- Pasangan: ${pasMap[pasangan] || 'tidak diketahui'}
+- Pekerjaan: ${pekMap[pekerjaan] || 'tidak diketahui'}
+- Kekuatan niat berubah: ${niat}/10
+${khawatir ? `- Kekhawatiran terbesar: "${khawatir}"` : ''}
+
+HASIL SCORING SISTEM:
+- Level: ${sc.level.toUpperCase()} (skor risiko ${sc.score}/${sc.maxScore})
+- Red flags: ${flags.length > 0 ? flags.map(f => '\n  ⚠ ' + f).join('') : ' tidak ada'}
+- Opsi yang paling sesuai (berdasarkan algoritma): "${opsiRec?.title}"
+
+Berikan analisis personal dalam 4 bagian dengan heading <h3>:
+
+1. <h3>Kondisimu saat ini</h3> — Mulai dengan satu kalimat validasi emosional yang jujur dan hangat (bukan basa-basi). Lalu jelaskan kondisi finansial ini dalam bahasa sehari-hari: apa artinya DTI ${Math.round(sc.dti * 100)}% secara nyata? Berapa lama kondisi ini berlangsung tanpa perubahan? Sebutkan 1-2 angka paling signifikan dengan cara yang manusiawi.
+
+2. <h3>Yang paling kritis untuk diperhatikan</h3> — Identifikasi 2-3 faktor paling mendesak dari data ini. Jika ada red flag, jelaskan konsekuensinya secara realistis (jujur tapi tidak menakut-nakuti). Sebutkan jenis utang mana yang paling mendesak diselesaikan dan mengapa secara matematis.
+
+3. <h3>Rekomendasi langkah untuk kondisimu</h3> — Jelaskan mengapa opsi "${opsiRec?.title}" paling sesuai dengan data konkret ini. Berikan penjelasan spesifik — bukan generik. Jika kondisi pasangan atau pekerjaan perlu diperhatikan khusus, sebutkan dengan taktis.
+
+4. <h3>Pesan untuk kondisi mentalmu</h3> — Satu paragraf penutup personal yang relevan dengan kondisi mental "${mentalMap[mental]}" dan kekhawatiran "${khawatir || 'yang tidak disebutkan'}". Kutip salah satu dari 5 prinsip ebook yang paling relevan. Akhiri dengan kalimat penguat yang berbasis realita — bukan klise.
+
+Panjang: 380-480 kata. Gunakan tag HTML: <h3>, <p>, <strong>, <ul><li>. Jangan sebut level berat/sedang/ringan karena sudah tampil di UI.`;
+
+  try {
+    const resp = await fetch(`${API_BASE}/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ systemPrompt: systemP, userPrompt: userP })
+    });
+
+    clearInterval(msgInv);
+    loadEl.classList.remove('show');
+    renderStatic(d, sc, flags, scenarios, opsi);
+    document.getElementById('result').classList.add('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (!resp.ok) throw new Error('API error ' + resp.status);
+    const respData = await resp.json();
+    document.getElementById('r-ai').innerHTML = respData.result || getFallbackAnalysis(sc.level, sc.dti, sc.danaBulan, mental, totalBunga);
+
+  } catch (err) {
+    clearInterval(msgInv);
+    loadEl.classList.remove('show');
+    renderStatic(d, sc, flags, scenarios, opsi);
+    document.getElementById('result').classList.add('show');
+    document.getElementById('r-ai').innerHTML = getFallbackAnalysis(sc.level, sc.dti, sc.danaBulan, mental, totalBunga);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Generate steps (fire and forget, renders when ready)
+  generateSteps(d, sc, opsiRec);
+}
+
+/* ══════════════════════════════════════════════════
+   GENERATE STEPS
+══════════════════════════════════════════════════ */
+async function generateSteps(d, sc, opsiRec) {
+  const stepsPrompt = `Berdasarkan kondisi finansial berikut:
+- Level keterjebakan riba: ${sc.level} (skor ${sc.score}/${sc.maxScore})
+- DTI: ${Math.round(sc.dti * 100)}%, arus kas bebas: ${rpStr(sc.free)}/bulan
+- Dana darurat: ${sc.danaBulan.toFixed(1)} bulan
+- Kondisi mental: ${d.mental}
+- Jenis utang: ${d.utang.map(u => u.label + ' (' + u.bunga + '%/thn)').join(', ')}
+- Opsi yang direkomendasikan: "${opsiRec?.title}"
+- Kekhawatiran: "${d.khawatir || 'tidak disebutkan'}"
+- Pasangan: ${d.pasangan}
+
+Berikan TEPAT 4 langkah konkret dan personal. Format JSON (hanya JSON, tanpa teks lain):
+[
+  {"judul":"...","deskripsi":"...","waktu":"...","prioritas":"tinggi/sedang"},
+  {"judul":"...","deskripsi":"...","waktu":"...","prioritas":"tinggi/sedang"},
+  {"judul":"...","deskripsi":"...","waktu":"...","prioritas":"tinggi/sedang"},
+  {"judul":"...","deskripsi":"...","waktu":"...","prioritas":"tinggi/sedang"}
+]
+
+Aturan ketat:
+- Langkah 1: bisa dilakukan HARI INI JUGA (sangat konkret, ada instruksi spesifik)
+- Langkah 2: dalam 3-7 hari ke depan
+- Langkah 3: dalam 2 minggu pertama
+- Langkah 4: target 1 bulan ke depan
+- Setiap deskripsi harus menyebut angka konkret dari data di atas (bukan placeholder)
+- Bahasa Indonesia, natural, tidak menggurui
+- "waktu": estimasi waktu yang dibutuhkan (contoh: "30 menit", "1-2 jam", "1 minggu")`;
+
+  try {
+    const resp = await fetch(`${API_BASE}/steps`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: stepsPrompt })
+    });
+    if (!resp.ok) throw new Error('Steps API error');
+    const data = await resp.json();
+    if (data.steps && data.steps.length > 0) {
+      const PRIORITY_COLOR = { tinggi: 'var(--red)', sedang: 'var(--amber)' };
+      document.getElementById('r-steps').innerHTML = data.steps.map((s, i) => `
+        <div class="step-row">
+          <div class="st-num">${i + 1}</div>
+          <div class="st-body">
+            <div class="st-title">${s.judul}</div>
+            <div class="st-desc">${s.deskripsi}</div>
+            <div class="st-time">⏱ ${s.waktu}${s.prioritas ? ` · <span style="color:${PRIORITY_COLOR[s.prioritas] || 'var(--ink45)'}">Prioritas ${s.prioritas}</span>` : ''}</div>
+          </div>
+        </div>`).join('');
+    } else {
+      renderFallbackSteps(resultData.sc?.level || 'sedang');
+    }
+  } catch {
+    renderFallbackSteps(resultData.sc?.level || 'sedang');
+  }
+}
+
+function renderFallbackSteps(level) {
+  const STEPS = {
+    ringan: [
+      { judul: 'Buat "peta utang" lengkap malam ini', deskripsi: 'Ambil kertas, buka semua aplikasi cicilan, dan tulis tabel 4 kolom: nama cicilan, sisa pokok, cicilan/bulan, sisa tenor. Hitung total riilnya untuk pertama kali. Melihat angka nyata adalah langkah pertama yang terpenting.', waktu: '30–45 menit', prioritas: 'tinggi' },
+      { judul: 'Tutup semua akses kredit baru hari ini', deskripsi: 'Hapus app pinjol, nonaktifkan fitur cicilan di marketplace, simpan kartu kredit di tempat sulit dijangkau. Keputusan ini tidak butuh waktu — cukup niat yang kuat untuk dijalankan sekarang.', waktu: 'Hari ini', prioritas: 'tinggi' },
+      { judul: 'Pilih 1 cicilan terkecil untuk dipercepat bulan ini', deskripsi: 'Dari peta utangmu, pilih yang saldo pokoknya paling kecil. Tambahkan minimal 20% dari cicilan normalnya setiap bulan. Melunas satu cicilan memberi momentum psikologis yang nyata.', waktu: 'Mulai bulan ini', prioritas: 'sedang' },
+      { judul: 'Buka rekening terpisah untuk "Dana Keluar Riba"', deskripsi: 'Buka rekening baru khusus (bisa di bank syariah) dan transfer minimal 5–10% dari penghasilan segera setelah gajian. Dana ini hanya boleh dipakai untuk mempercepat pelunasan — tidak untuk keperluan lain.', waktu: 'Minggu ini', prioritas: 'sedang' },
+    ],
+    sedang: [
+      { judul: 'Hitung total beban real dengan jujur hari ini', deskripsi: 'Buka semua tagihan dan hitung: berapa total yang harus dibayar sampai semua lunas? Angka ini harus kamu ketahui dengan jelas — banyak orang menghindarinya karena takut, tapi ketidaktahuan justru lebih berbahaya.', waktu: '45 menit–1 jam', prioritas: 'tinggi' },
+      { judul: 'Hubungi bank dan tanya opsi restrukturisasi minggu ini', deskripsi: 'Telepon atau datang ke CS bank dan tanyakan langsung: "Apakah ada program keringanan cicilan, penurunan bunga, atau perpanjangan tenor?" Ini hak nasabah yang sering tidak dipublikasikan. Tidak ada ruginya bertanya.', waktu: '2–3 hari ke depan', prioritas: 'tinggi' },
+      { judul: 'Buat anggaran "mode darurat" untuk bulan ini', deskripsi: 'Coret semua pengeluaran yang tidak berdampak pada kebutuhan pokok keluarga. Setiap rupiah yang dihemat adalah amunisi untuk mempercepat pelunasan. Bukan hukuman — ini strategi cerdas.', waktu: 'Minggu ini', prioritas: 'tinggi' },
+      { judul: 'Bicara kondisi ini kepada pasanganmu', deskripsi: 'Pilih waktu yang tenang (bukan saat stres atau kesal). Tunjukkan peta utang yang sudah dibuat. Minta satu keputusan bersama. Perubahan finansial yang dilakukan sendirian tanpa dukungan pasangan hampir selalu gagal.', waktu: 'Minggu ini, saat kondisi baik', prioritas: 'sedang' },
+    ],
+    berat: [
+      { judul: 'STOP — pastikan tidak ada kewajiban baru masuk', deskripsi: 'Sebelum memikirkan strategi apapun: amankan kartu kredit dari jangkauan, hapus semua app pinjol, nonaktifkan fitur buy-now-pay-later. Satu kewajiban baru di kondisi ini bisa menjadi tipping point. Lakukan sekarang.', waktu: 'Sekarang, hari ini', prioritas: 'tinggi' },
+      { judul: 'Hubungi SEMUA kreditur dan negosiasi restrukturisasi', deskripsi: 'Hubungi setiap bank/leasing dan minta opsi: keringanan cicilan sementara, perpanjangan tenor, atau pembekuan bunga. Banyak lembaga punya program ini tapi tidak diiklankan. Satu telepon bisa mengubah beban bulananmu secara signifikan.', waktu: 'Dalam 3 hari ke depan', prioritas: 'tinggi' },
+      { judul: 'Inventarisasi aset yang bisa dilikuidasi', deskripsi: 'Buat daftar jujur: ada kendaraan cadangan? Emas? Elektronik tidak terpakai? Investasi yang bisa dicairkan? Menjual satu aset untuk menutup utang berbunga paling tinggi bisa memotong beban bunga secara drastis.', waktu: 'Minggu ini', prioritas: 'tinggi' },
+      { judul: 'Cari satu pendamping yang dipercaya', deskripsi: 'Di kondisi berat, keputusan besar tidak boleh diambil sendirian. Cari satu orang: konsultan keuangan syariah, ustaz yang paham fiqih muamalah, atau teman dekat yang paham keuangan. Ceritakan kondisi apa adanya dan minta masukan realistis.', waktu: 'Minggu ini', prioritas: 'sedang' },
+    ],
+  };
+  const steps = STEPS[level] || STEPS.sedang;
+  const PRIORITY_COLOR = { tinggi: 'var(--red)', sedang: 'var(--amber)' };
+  document.getElementById('r-steps').innerHTML = steps.map((s, i) => `
+    <div class="step-row">
+      <div class="st-num">${i + 1}</div>
+      <div class="st-body">
+        <div class="st-title">${s.judul}</div>
+        <div class="st-desc">${s.deskripsi}</div>
+        <div class="st-time">⏱ ${s.waktu} · <span style="color:${PRIORITY_COLOR[s.prioritas]}">Prioritas ${s.prioritas}</span></div>
+      </div>
+    </div>`).join('');
+}
+
+function getFallbackAnalysis(level, dti, danaBulan, mental, totalBunga) {
+  const T = {
+    ringan: `<h3>Kondisimu saat ini</h3><p>Kamu datang di waktu yang tepat — saat kondisinya masih ada ruang untuk bernapas. Itu adalah modal besar yang sering tidak disadari nilainya.</p><p>Dengan rasio cicilan di angka ${Math.round(dti * 100)}%, kamu masih berada di batas yang relatif terkendali. Artinya, setiap bulan masih ada sisa yang bisa diarahkan untuk mempercepat perubahan — tanpa harus mengorbankan kebutuhan pokok keluarga secara drastis.</p><h3>Yang paling kritis untuk diperhatikan</h3><p>Bahaya terbesar di kondisi seperti ini bukan angka-angkanya — tapi <strong>menunda karena merasa masih aman</strong>. Banyak orang yang mulai dari posisi ini dan berakhir jauh lebih berat karena terus menambah kewajiban baru dengan alasan "nanti juga bisa ditangani."</p><p>Kalau ada lebih dari satu jenis cicilan, prioritaskan untuk tidak menambah satupun jenis baru — ini langkah paling konkret yang bisa dilakukan hari ini.</p><h3>Rekomendasi langkah untuk kondisimu</h3><p><strong>Hijrah Finansial Bertahap</strong> adalah pilihan yang paling sesuai. Tidak perlu langkah dramatis yang berisiko merusak stabilitas keluarga. Mulai dari hal kecil yang konsisten: tutup semua akses kredit baru, pilih satu cicilan terkecil untuk dipercepat, dan bangun dana darurat secara bertahap.</p><h3>Pesan untuk kondisimu</h3><p>Seperti yang ditulis dalam prinsip ebook ini: <em>bertahap bukan tanda lemah iman — itu pengakuan jujur atas kapasitas diri</em>. Perubahan yang kamu buat hari ini, sekecil apapun, lebih bernilai dari rencana besar yang terus ditunda menunggu "waktu yang tepat."</p>`,
+    sedang: `<h3>Kondisimu saat ini</h3><p>Tekanan itu nyata, dan wajar jika kamu merasakannya. Kondisi keuanganmu mulai menyempit — dengan DTI ${Math.round(dti * 100)}%, setiap keputusan finansial sudah mulai terasa lebih berat dari sebelumnya.</p><p>Ini bukan kondisi darurat, tapi ini juga bukan kondisi yang bisa dibiarkan tanpa langkah nyata. Setiap bulan yang berlalu tanpa perubahan artinya ${toJuta(totalBunga / 12)} bunga bertambah dari yang seharusnya bisa dihemat.</p><h3>Yang paling kritis untuk diperhatikan</h3><p>Dua hal yang paling mendesak: pertama, <strong>tidak menambah kewajiban baru dalam bentuk apapun</strong> — bahkan yang kelihatan "kecil" seperti paylater. Kedua, segera mulai melunasi cicilan dengan bunga tertinggi lebih cepat, karena setiap hari penundaan di sana sangat mahal secara matematis.</p><h3>Rekomendasi langkah untuk kondisimu</h3><p><strong>Percepat Pelunasan dengan Pengorbanan Gaya Hidup</strong> adalah opsi yang paling sesuai saat ini. Bukan hukuman — ini strategi cerdas. Setiap pengeluaran yang dicoret dan dialihkan ke pelunasan adalah investasi untuk kebebasan finansial yang lebih cepat.</p><h3>Pesan untuk kondisimu</h3><p>Gelisah adalah tanda bahwa hatimu masih hidup dan peka terhadap kondisi ini. Seperti prinsip ebook: <em>mengurangi keterikatan riba juga bagian dari perubahan</em> — kamu tidak perlu sempurna sekarang. Mulai dari satu langkah kecil yang nyata hari ini.</p>`,
+    berat: `<h3>Kondisimu saat ini</h3><p>Dibutuhkan keberanian yang sesungguhnya untuk melihat kondisi ini dengan jujur — dan kamu melakukannya. Dengan DTI ${Math.round(dti * 100)}% dan dana darurat hanya ${danaBulan.toFixed(1)} bulan, kondisinya memang berat. Tapi berat tidak berarti tanpa jalan.</p><h3>Yang paling kritis untuk diperhatikan</h3><p>Prioritas pertama bukan "bagaimana keluar secepat mungkin" — tapi <strong>"bagaimana agar tidak semakin dalam"</strong>. Setiap kewajiban baru yang masuk sekarang akan memperparah kondisi secara eksponensial. Stabilkan dulu posisi ini sebelum bergerak.</p><p>Jika ada pinjol atau cicilan berbunga sangat tinggi, itu yang harus dimatikan lebih dulu — bahkan dengan cara apapun yang halal termasuk menjual aset.</p><h3>Rekomendasi langkah untuk kondisimu</h3><p><strong>Bertahan Sementara sambil Menutup Semua Pintu Riba Baru</strong> — ini bukan menyerah. Ini mengamankan posisi sebelum bergerak lebih jauh. Keputusan besar yang diambil dalam kondisi tertekan hampir selalu disesali kemudian.</p><h3>Pesan untuk kondisimu</h3><p>Prinsip yang paling relevan dari ebook ini untuk kondisimu: <em>Allah tidak menilai kecepatan, tapi kesungguhan dan arah</em>. Bergerak perlahan ke arah yang benar, sambil menjaga amanah terhadap keluarga, jauh lebih bernilai daripada keputusan heroik yang merusak.</p>`,
+  };
+  return T[level] || T.sedang;
+}
+
+/* ══════════════════════════════════════════════════
+   PDF EXPORT
+══════════════════════════════════════════════════ */
+async function exportPDF() {
+  const btn = document.getElementById('btn-pdf');
+  btn.disabled = true;
+  btn.textContent = '⏳ Membuat PDF...';
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const { d, sc, flags, scenarios, opsi } = resultData;
+    const pageW = 210, pageH = 297;
+    const mL = 18, mR = 18, mT = 18;
+    const cW = pageW - mL - mR;
+    const now = new Date();
+    const tgl = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const COLORS = {
+      ink:   [26, 22, 16],
+      ink60: [100, 95, 88],
+      ink40: [140, 135, 125],
+      gold:  [168, 116, 42],
+      teal:  [26, 107, 82],
+      amber: [122, 80, 16],
+      red:   [128, 40, 32],
+      cream: [245, 240, 232],
+      warm:  [253, 250, 244],
+    };
+
+    const LV_COLOR = { ringan: COLORS.teal, sedang: COLORS.amber, berat: COLORS.red };
+    const LV_BG = { ringan: [210, 234, 222], sedang: [242, 228, 192], berat: [242, 212, 208] };
+
+    // Helper: add watermark to current page
+    function addWatermark() {
+      doc.saveGraphicsState();
+      doc.setGState(new doc.GState({ opacity: 0.055 }));
+      doc.setTextColor(...COLORS.gold);
+      doc.setFontSize(38);
+      doc.setFont('helvetica', 'italic');
+      doc.text('jalanpulang.id', pageW / 2, pageH / 2, { angle: 45, align: 'center' });
+      doc.restoreGraphicsState();
+    }
+
+    // Helper: add footer
+    function addFooter(pageNum, totalPages) {
+      const fY = pageH - 10;
+      doc.setDrawColor(...COLORS.ink40);
+      doc.setLineWidth(0.3);
+      doc.line(mL, fY - 4, pageW - mR, fY - 4);
+      doc.setFontSize(7.5);
+      doc.setTextColor(...COLORS.ink40);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Tools created by Achmad Alief  ·  Ebook Terlanjur Riba  ·  jalanpulang.id', mL, fY);
+      doc.text('Data tidak disimpan di server dan hanya diproses di perangkat Anda', mL, fY + 3.5);
+      doc.text('Halaman ' + pageNum + ' dari ' + totalPages, pageW - mR, fY, { align: 'right' });
+    }
+
+    // Helper: section title
+    function secTitle(doc, txt, y) {
+      doc.setFillColor(...COLORS.gold);
+      doc.rect(mL, y, 3, 5, 'F');
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLORS.ink);
+      doc.text(txt, mL + 6, y + 4);
+      doc.setDrawColor(...COLORS.ink40);
+      doc.setLineWidth(0.2);
+      doc.line(mL + 6, y + 5.5, pageW - mR, y + 5.5);
+      return y + 12;
+    }
+
+    // ═══ PAGE 1: COVER ═══
+    // Background header
+    doc.setFillColor(...COLORS.ink);
+    doc.rect(0, 0, pageW, 80, 'F');
+
+    // Gold accent line
+    doc.setFillColor(...COLORS.gold);
+    doc.rect(0, 80, pageW, 1.5, 'F');
+
+    // Brand
+    doc.setFontSize(8.5);
+    doc.setTextColor(...COLORS.gold);
+    doc.setFont('helvetica', 'bold');
+    doc.setCharSpace(2);
+    doc.text('JALANPULANG.ID', pageW / 2, 22, { align: 'center' });
+    doc.setCharSpace(0);
+
+    // Title
+    doc.setFontSize(24);
+    doc.setTextColor(253, 250, 244);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Laporan Analisis', pageW / 2, 38, { align: 'center' });
+    doc.setFontSize(22);
+    doc.setTextColor(...COLORS.gold);
+    doc.text('Beban Riba Personal', pageW / 2, 50, { align: 'center' });
+
+    // Subtitle
+    doc.setFontSize(9);
+    doc.setTextColor(200, 190, 175);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Panduan bertahap & manusiawi untuk keluar dari riba', pageW / 2, 62, { align: 'center' });
+    doc.text('tanpa merusak stabilitas keluarga', pageW / 2, 67, { align: 'center' });
+
+    // Cover info box
+    let cY = 100;
+    doc.setFillColor(...COLORS.warm);
+    doc.setDrawColor(...COLORS.gold);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(mL, cY, cW, 60, 4, 4, 'FD');
+
+    cY += 10;
+    const infoRows = [
+      ['Nama', d.nama || '—'],
+      ['Kota', d.kota || '—'],
+      ['Tanggal analisis', tgl],
+      ['Level keterjebakan', sc.level.charAt(0).toUpperCase() + sc.level.slice(1) + ' (skor ' + sc.score + '/' + sc.maxScore + ')'],
+      ['Total kewajiban bulanan', rpStr(d.totalCicilan)],
+      ['Total bunga tersisa', rpStr(d.totalBunga)],
+    ];
+    infoRows.forEach(([lbl, val]) => {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLORS.ink60);
+      doc.text(lbl, mL + 8, cY);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLORS.ink);
+      doc.text(val, mL + 55, cY);
+      cY += 8;
+    });
+
+    // Level badge
+    cY = 175;
+    const lvBg = LV_BG[sc.level];
+    const lvFg = LV_COLOR[sc.level];
+    doc.setFillColor(...lvBg);
+    doc.roundedRect(mL, cY, cW, 30, 4, 4, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...lvFg);
+    doc.setCharSpace(1.5);
+    doc.text('LEVEL KETERJEBAKAN', pageW / 2, cY + 9, { align: 'center' });
+    doc.setCharSpace(0);
+    const lvTitles = { ringan: 'Kamu masih punya ruang gerak', sedang: 'Perlu perhatian dan rencana nyata', berat: 'Butuh langkah terukur & bertahap' };
+    doc.setFontSize(15);
+    doc.setFont('helvetica', 'bold');
+    doc.text(lvTitles[sc.level] || '', pageW / 2, cY + 22, { align: 'center' });
+
+    // Privacy notice
+    cY = 215;
+    doc.setFillColor(210, 234, 222);
+    doc.roundedRect(mL, cY, cW, 14, 3, 3, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.teal);
+    doc.text('🔒 PRIVASI TERJAMIN', pageW / 2, cY + 5.5, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.text('Data tidak disimpan di server dan hanya diproses di perangkat Anda', pageW / 2, cY + 10, { align: 'center' });
+
+    // Disclaimer
+    cY = 240;
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(...COLORS.ink40);
+    const discLines = doc.splitTextToSize('Laporan ini adalah panduan awal berdasarkan data yang diisi — bukan fatwa dan bukan pengganti nasihat ulama atau konsultan keuangan syariah. Setiap kondisi manusia unik. Gunakan sebagai peta awal, bukan satu-satunya rujukan.', cW);
+    doc.text(discLines, pageW / 2, cY, { align: 'center' });
+
+    addWatermark();
+    addFooter(1, 5);
+
+    // ═══ PAGE 2: INDIKATOR & RED FLAGS ═══
+    doc.addPage();
+    addWatermark();
+    let y = mT;
+
+    y = secTitle(doc, 'Indikator Kesehatan Finansial', y);
+
+    sc.details.forEach(det => {
+      const statusColor = { berat: COLORS.red, sedang: COLORS.amber, ringan: COLORS.teal, ok: COLORS.teal };
+      const barColors = { berat: COLORS.red, sedang: COLORS.amber, ringan: COLORS.teal, ok: COLORS.teal };
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLORS.ink);
+      doc.text(det.label, mL, y);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...(statusColor[det.status] || COLORS.ink));
+      doc.text(det.val, pageW - mR, y, { align: 'right' });
+
+      // Bar background
+      const barY = y + 2;
+      doc.setFillColor(220, 216, 210);
+      doc.roundedRect(mL, barY, cW, 3.5, 1, 1, 'F');
+
+      // Bar fill
+      const barW = Math.min(cW, cW * det.barW / 100);
+      doc.setFillColor(...(barColors[det.status] || COLORS.teal));
+      if (barW > 0) doc.roundedRect(mL, barY, barW, 3.5, 1, 1, 'F');
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(...COLORS.ink40);
+      doc.text(det.note, mL, y + 8.5);
+      y += 16;
+    });
+
+    y += 4;
+    if (flags.length > 0) {
+      y = secTitle(doc, 'Perhatian Khusus (Red Flags)', y);
+      doc.setFillColor(...LV_BG.berat);
+      doc.roundedRect(mL, y - 2, cW, flags.length * 11 + 8, 3, 3, 'F');
+      flags.forEach((f, i) => {
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...COLORS.red);
+        doc.text('▲', mL + 4, y + (i * 11) + 6);
+        doc.setFont('helvetica', 'normal');
+        const lines = doc.splitTextToSize(f, cW - 14);
+        doc.text(lines, mL + 10, y + (i * 11) + 6);
+      });
+      y += flags.length * 11 + 14;
+    }
+
+    // 4 summary metrics
+    y = secTitle(doc, 'Ringkasan Metrik Utama', y);
+    const metrics = [
+      { lbl: 'Total bunga tersisa', val: rpStr(d.totalBunga), sub: 'Yang bisa dihemat jika dipercepat', c: COLORS.red },
+      { lbl: 'Arus kas bebas/bulan', val: sc.free >= 0 ? rpStr(sc.free) : '-' + rpStr(-sc.free), sub: sc.free < 0 ? 'DEFISIT setiap bulan!' : 'Setelah semua kewajiban', c: sc.free < 0 ? COLORS.red : COLORS.teal },
+      { lbl: 'Dana darurat', val: sc.danaBulan.toFixed(1) + ' bulan', sub: sc.danaBulan < 3 ? 'Perlu ditambah (ideal 3–6 bln)' : 'Cukup aman', c: sc.danaBulan < 2 ? COLORS.red : COLORS.teal },
+      { lbl: 'Rasio cicilan', val: Math.round(sc.dti * 100) + '%', sub: sc.dti < 0.3 ? 'Sehat (< 30%)' : sc.dti < 0.5 ? 'Perlu diperhatikan' : 'Berbahaya (> 50%)', c: sc.dti > 0.5 ? COLORS.red : sc.dti > 0.35 ? COLORS.amber : COLORS.teal },
+    ];
+    const mCardW = (cW - 6) / 2;
+    metrics.forEach((m, i) => {
+      const mx = mL + (i % 2) * (mCardW + 6);
+      const my = y + Math.floor(i / 2) * 28;
+      doc.setFillColor(...COLORS.warm);
+      doc.setDrawColor(...COLORS.ink40);
+      doc.setLineWidth(0.2);
+      doc.roundedRect(mx, my, mCardW, 25, 3, 3, 'FD');
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLORS.ink40);
+      doc.text(m.lbl.toUpperCase(), mx + 5, my + 6);
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...m.c);
+      doc.text(m.val, mx + 5, my + 16);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLORS.ink40);
+      doc.text(m.sub, mx + 5, my + 22);
+    });
+
+    addFooter(2, 5);
+
+    // ═══ PAGE 3: RINCIAN UTANG ═══
+    doc.addPage();
+    addWatermark();
+    y = mT;
+    y = secTitle(doc, 'Rincian Beban Per Jenis Utang', y);
+
+    if (d.utang.length > 0) {
+      doc.autoTable({
+        startY: y,
+        head: [['Jenis Utang', 'Sisa Pokok', 'Cicilan/Bln', 'Tenor (bln)', 'Bunga (%/thn)', 'Total Bunga']],
+        body: d.utang.map(u => [
+          u.label,
+          rpStr(u.pokok),
+          rpStr(u.cicilan),
+          u.tenor,
+          u.bunga + '%',
+          rpStr(u.totalBunga),
+        ]),
+        foot: [['TOTAL', rpStr(d.totalPokok), rpStr(d.totalCicilan), '—', '—', rpStr(d.totalBunga)]],
+        margin: { left: mL, right: mR },
+        styles: { fontSize: 8.5, cellPadding: 3.5, font: 'helvetica', textColor: COLORS.ink },
+        headStyles: { fillColor: COLORS.ink, textColor: [253, 250, 244], fontStyle: 'bold', fontSize: 8 },
+        footStyles: { fillColor: COLORS.gold, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+        alternateRowStyles: { fillColor: COLORS.cream },
+        columnStyles: {
+          0: { fontStyle: 'bold' },
+          1: { halign: 'right' }, 2: { halign: 'right' },
+          3: { halign: 'center' }, 4: { halign: 'center' }, 5: { halign: 'right', textColor: COLORS.red },
+        },
+      });
+      y = doc.lastAutoTable.finalY + 10;
+    }
+
+    y = secTitle(doc, 'Simulasi Skenario Kebebasan Finansial', y);
+    doc.autoTable({
+      startY: y,
+      head: [['Skenario', 'Estimasi Bebas', 'Total Bunga', 'Tambahan/Bln', 'Catatan']],
+      body: scenarios.map(sc => [
+        sc.label + (sc.rec ? ' ★' : ''),
+        monthsToStr(sc.months),
+        rpStr(sc.bunga),
+        sc.extra > 0 ? rpStr(sc.extra) : '—',
+        sc.rec ? 'Paling realistis' : sc.desc,
+      ]),
+      margin: { left: mL, right: mR },
+      styles: { fontSize: 8.5, cellPadding: 3.5, font: 'helvetica', textColor: COLORS.ink },
+      headStyles: { fillColor: COLORS.ink, textColor: [253, 250, 244], fontStyle: 'bold', fontSize: 8 },
+      alternateRowStyles: { fillColor: COLORS.cream },
+      bodyStyles: {},
+      didParseCell: (data) => {
+        if (data.section === 'body' && scenarios[data.row.index]?.rec) {
+          data.cell.styles.fillColor = [237, 224, 196];
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+    });
+
+    addFooter(3, 5);
+
+    // ═══ PAGE 4: AI ANALYSIS ═══
+    doc.addPage();
+    addWatermark();
+    y = mT;
+    y = secTitle(doc, 'Analisis & Penilaian Personal', y);
+
+    const aiEl = document.getElementById('r-ai');
+    const aiText = aiEl ? aiEl.innerText || aiEl.textContent : '';
+
+    // Parse H3 sections
+    const sections = aiText.split(/(?=Kondisimu saat ini|Yang paling kritis|Rekomendasi langkah|Pesan untuk)/);
+    sections.forEach(sec => {
+      if (!sec.trim()) return;
+      const lines = sec.trim().split('\n').filter(l => l.trim());
+      if (lines.length === 0) return;
+
+      // Section heading
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLORS.gold);
+      const heading = lines[0].trim();
+      doc.text(heading, mL, y);
+      y += 6;
+
+      // Body text
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLORS.ink);
+      const bodyLines = lines.slice(1).join(' ');
+      if (bodyLines) {
+        const wrapped = doc.splitTextToSize(bodyLines, cW);
+        if (y + wrapped.length * 5 > pageH - 25) { doc.addPage(); addWatermark(); y = mT; }
+        doc.text(wrapped, mL, y);
+        y += wrapped.length * 5 + 8;
+      }
+    });
+
+    addFooter(4, 5);
+
+    // ═══ PAGE 5: OPSI & LANGKAH ═══
+    doc.addPage();
+    addWatermark();
+    y = mT;
+    y = secTitle(doc, '5 Opsi Keluar dari Riba', y);
+
+    opsi.forEach((o) => {
+      if (y > pageH - 50) { doc.addPage(); addWatermark(); y = mT; }
+      const bg = o.rec ? [237, 224, 196] : COLORS.cream;
+      const borderC = o.rec ? COLORS.gold : COLORS.ink40;
+      doc.setFillColor(...bg);
+      doc.setDrawColor(...borderC);
+      doc.setLineWidth(o.rec ? 0.7 : 0.2);
+      doc.roundedRect(mL, y, cW, 22, 3, 3, 'FD');
+      if (o.rec) {
+        doc.setFillColor(...COLORS.gold);
+        doc.roundedRect(mL, y, 3, 22, 1, 1, 'F');
+      }
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLORS.ink);
+      doc.text((o.rec ? '★ ' : '') + 'Opsi ' + o.id + ': ' + o.title, mL + 7, y + 7);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLORS.ink60);
+      const descW = doc.splitTextToSize(o.desc, cW - 10);
+      doc.text(descW, mL + 7, y + 13);
+      y += 26;
+    });
+
+    y += 4;
+    if (y > pageH - 80) { doc.addPage(); addWatermark(); y = mT; }
+    y = secTitle(doc, 'Langkah Konkret yang Bisa Dimulai', y);
+
+    const stepsEl = document.getElementById('r-steps');
+    const stepItems = stepsEl ? stepsEl.querySelectorAll('.step-row') : [];
+    stepItems.forEach((item, i) => {
+      if (y > pageH - 35) { doc.addPage(); addWatermark(); y = mT; }
+      const title = item.querySelector('.st-title')?.textContent || '';
+      const desc = item.querySelector('.st-desc')?.textContent || '';
+      const time = item.querySelector('.st-time')?.textContent || '';
+
+      doc.setFillColor(...COLORS.gold);
+      doc.circle(mL + 3.5, y + 3.5, 3.5, 'F');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.text(String(i + 1), mL + 3.5, y + 3.8, { align: 'center' });
+
+      doc.setFontSize(9.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLORS.ink);
+      doc.text(title, mL + 10, y + 5);
+
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLORS.ink60);
+      const descWrapped = doc.splitTextToSize(desc, cW - 12);
+      doc.text(descWrapped, mL + 10, y + 11);
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLORS.teal);
+      doc.text(time, mL + 10, y + 11 + descWrapped.length * 4.5);
+
+      y += 18 + descWrapped.length * 4;
+    });
+
+    // Final note
+    if (y < pageH - 30) {
+      y += 6;
+      doc.setFillColor(...COLORS.cream);
+      doc.roundedRect(mL, y, cW, 22, 3, 3, 'F');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(...COLORS.ink60);
+      const finalNote = '"Perubahan yang kamu buat hari ini, sekecil apapun, lebih bernilai dari rencana besar yang terus ditunda. Bertahap bukan tanda lemah iman — itu pengakuan jujur atas kapasitas diri." — Terlanjur Riba';
+      const noteLines = doc.splitTextToSize(finalNote, cW - 12);
+      doc.text(noteLines, pageW / 2, y + 11, { align: 'center' });
+    }
+
+    addFooter(5, 5);
+
+    // Save
+    const safeName = (d.nama || 'Anonim').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+    doc.save(`Laporan_Riba_${safeName}_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.pdf`);
+
+  } catch (err) {
+    console.error('PDF error:', err);
+    alert('Terjadi kesalahan saat membuat PDF. Pastikan semua data sudah terisi dan coba lagi.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬇ Unduh Laporan PDF';
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   RESET
+══════════════════════════════════════════════════ */
+function resetAll() {
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('utang-list').innerHTML = '';
+  utangItems = []; uid = 0; resultData = {};
+  ['nama','kota','penghasilan','pengeluaran','dana','aset','khawatir'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('tanggungan').value = '';
+  document.getElementById('live-prev').classList.remove('show');
+  document.querySelectorAll('.radio-item').forEach(el => el.classList.remove('sel'));
+  document.querySelectorAll('[type=radio]').forEach(el => { el.checked = false; });
+  document.getElementById('niat').value = 7;
+  updSlider(document.getElementById('niat'), 'niat-lbl');
+  ['r-level','r-bk-rows','r-scores','r-sumgrid','r-scenarios','r-opsi','r-steps','r-rf-list'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.innerHTML = '';
+  });
+  document.getElementById('r-ai').innerHTML = '<span class="cursor"></span>';
+  document.getElementById('r-redflag').classList.remove('show');
+  document.getElementById('loading').classList.remove('show');
+  curStep = 1;
+  ['si1','si2','si3','si4'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.classList.remove('active','done');
+    if (i === 0) el.classList.add('active');
+  });
+  ['sp1','sp2','sp3'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.classList.remove('active');
+    if (i === 0) el.classList.add('active');
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
